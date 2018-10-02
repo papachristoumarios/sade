@@ -7,6 +7,8 @@ import spacy
 nlp = spacy.load('en_core_web_sm')
 import re
 import pickle
+import argparse
+import json
 import string
 import glob
 import sys
@@ -29,7 +31,11 @@ def get_areas():
     return set(result)
 
 
-def source_code_document_embeddings(extensions):
+def source_code_document_embeddings(extensions, modules=None):
+    if modules != None:
+        modules = json.loads(open(modules, 'r'))
+
+
     files = []
     for ext in extensions:
         files.extend(list_files('.', ext))
@@ -58,7 +64,11 @@ def source_code_document_embeddings(extensions):
         for line in lines:
             words.extend(line.split())
 
-        td = TaggedDocument(words=words, tags=[filename])
+        if modules == None:
+            td = TaggedDocument(words=words, tags=[filename])
+        else:
+            td = TaggedDocument(words=words, tags=[module[filename]])
+
         taggeddocs.append(td)
 
     print('Generated dataset')
@@ -134,7 +144,7 @@ def camel_case_split(identifier):
     matches = finditer(
         '.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)',
         identifier)
-    return [m.group(0) for m in matches]
+    return [m.group(0).lower() for m in matches]
 
 
 def split_underscores(s):
@@ -154,5 +164,12 @@ def list_files(input_dir, suffix, recursive=True):
 
 
 if __name__ == '__main__':
-    os.chdir(sys.argv[1])
-    source_code_document_embeddings(['.c', '.h'])
+    argparser = argparse.ArgumentParser(description='Generate document embeddings')
+    argparser.add_argument('-d', type=str, default='.', help='Directory')
+    argparser.add_argument('-m', type=str, help='Modules')
+
+    args = argparser.parse_args()
+
+    os.chdir(args.d)
+
+    source_code_document_embeddings(['.c', '.h'], modules=args.m)

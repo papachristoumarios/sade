@@ -6,16 +6,17 @@
 import numpy as np
 import networkx as nx
 import sys
+import argparse
 
 G = nx.DiGraph()
 
-while True: 
+while True:
 	line = sys.stdin.readline()
 	if not line: break
-	u, v = line.strip().split(',') 
+	u, v = line.strip().split(',')
 	G.add_edge(u, v)
 
 cycles = nx.simple_cycles(G)
 for cycle in cycles:
-	print(', '.join(cycle))
-
+	if len(cycle) > 1: # avoid self-cycles	
+		print(', '.join(cycle))
