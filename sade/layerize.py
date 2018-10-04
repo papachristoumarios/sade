@@ -1,71 +1,71 @@
 import numpy as np
 import networkx as nx
 import sys
+import pprint
 import argparse
 import collections
 import pickle
 import multiprocessing
-from helpers import get_name
+import sade.community_detection
+import sade.mdst
 
-
-def calculate_scores(level, R):
-	def _calculacte_scores_level(l):
-		total, count = 0, 0
-		for i in range(len(l)):
-			for j in range(i + 1):
-				try:
-					total += R[l[i], l[j]]
-					count += 1
-				except:
-					pass
-
-		return total / count
-
-	scores = {}
-	for idl, l in level.items():
-		scores[idl] = _calculacte_scores_level(l)
-
-	average = np.mean([x for x in scores.values()])
-
-	return scores, average
 
 def bfs(G, s):
-	depth = {}
-	level = collections.defaultdict(list)
-	q = collections.deque()
-	for v in G.nodes():
-		depth[v] = -1
+    depth = {}
+    level = collections.defaultdict(list)
+    q = collections.deque()
+    for v in G.nodes():
+        depth[v] = -1
 
-	depth[s] = 0
-	level[0] = [s]
-	q.append(s)
+    depth[s] = 0
+    level[0] = [s]
+    q.append(s)
 
-	while q:
-		u = q.popleft()
+    while q:
+        u = q.popleft()
 
-		for v in G[u]:
-			if depth[v] == -1:
-				depth[v] = depth[u] + 1
-				q.append(v)
-				level[depth[v]].append(v)
+        for v in G[u]:
+            if depth[v] == -1:
+                depth[v] = depth[u] + 1
+                q.append(v)
+                level[depth[v]].append(v)
 
-
-	return depth, level
-
-
-G = nx.DiGraph()
-R = pickle.load(open('corrcoef.pickle', 'rb'))
+    return depth, level
 
 
-while True:
-		line = sys.stdin.readline()
-		if not line: break
-		u, v = line.strip().split(',')
-		G.add_edge(get_name(u), get_name(v))
+if __name__ == '__main__':
+    argparser = argparse.ArgumentParser(
+        description='Commnunity detection using the Louvain Algorithm')
 
-final_scores = []
+    argparser.add_argument(
+        '-e',
+        type=str,
+        help='Doc2Vec Embeddings',
+        default='embeddings.bin')
+    argparser.add_argument('-g', type=str, help='Call graph file')
+    argparser.add_argument(
+        '-d',
+        type=int,
+        help='Number of dimensions to reduce Embeddings Space',
+        default=-1)
+    args = argparser.parse_args()
 
-for s in G.nodes():
-	depth, level = bfs(G, s)
-	score, avg = calculate_scores(level, R)
-	print(level, avg)
+    partition, communities, G, model = sade.community_detection.detect_communities(
+        embeddings_filename=args.e, call_graph_file=args.g, dimensions=args.d)
+
+    H = sade.community_detection.construct_induced_directed_graph(
+        communities, partition, G)
+
+    MDST = sade.mdst.mst(0, H)
+
+    print(MDST)
+
+    depth, level = bfs(MDST, 0)
+
+    layers = collections.defaultdict(list)
+
+    for lvl, _communities in level.items():
+        for c in _communities:
+            layers[lvl] = layers[lvl] + communities[c][0]
+
+    pprint.pprint(layers)

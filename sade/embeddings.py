@@ -20,6 +20,7 @@ from gensim.parsing.preprocessing import preprocess_string, remove_stopwords
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
+import sade.helpers
 
 logging.basicConfig(
     format='%(asctime)s : %(levelname)s : %(message)s',
@@ -31,7 +32,7 @@ def get_areas():
     return set(result)
 
 
-def source_code_document_embeddings(extensions, modules=None):
+def source_code_document_embeddings(extensions, modules=None, outfile='embeddings.bin'):
     if modules != None:
         modules = json.loads(open(modules, 'r'))
 
@@ -65,7 +66,7 @@ def source_code_document_embeddings(extensions, modules=None):
             words.extend(line.split())
 
         if modules == None:
-            td = TaggedDocument(words=words, tags=[filename])
+            td = TaggedDocument(words=words, tags=[sade.helpers.basename(filename)])
         else:
             td = TaggedDocument(words=words, tags=[module[filename]])
 
@@ -91,7 +92,9 @@ def source_code_document_embeddings(extensions, modules=None):
         taggeddocs,
         total_examples=model.corpus_count,
         epochs=model.iter)
-    model.save('embeddings.bin')
+    model.save(outfile)
+
+    return model
 
 
 def preprocess_data_samples(data_samples):
@@ -167,9 +170,10 @@ if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Generate document embeddings')
     argparser.add_argument('-d', type=str, default='.', help='Directory')
     argparser.add_argument('-m', type=str, help='Modules')
+    argparser.add_argument('-o', type=str, help='Output File', default='embeddings.bin')
 
     args = argparser.parse_args()
 
     os.chdir(args.d)
 
-    source_code_document_embeddings(['.c', '.h'], modules=args.m)
+    source_code_document_embeddings(['.c', '.h'], modules=args.m, outfile=args.o)

@@ -6,3 +6,6 @@ def cmd(_cmd):
     l = [x.decode('utf-8') for x in l.splitlines()]
     l = list(filter(lambda z: z.rstrip() != '', l))
     return l
+
+def basename(x): return x.split('/')[-1]
+    

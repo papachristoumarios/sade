@@ -6,7 +6,7 @@
 import numpy as np
 from scipy import ndimage
 from matplotlib import pyplot as plt
-from sklearn import manifold, datasets
+from sklearn import manifold
 import gensim
 import gensim.models
 from sklearn.cluster import AgglomerativeClustering
@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
     # Reduce dimensions
     if args.d != -1:
-        X = manifold.SpectralEmbedding(n_components=2).fit_transform(X)
+        X = manifold.SpectralEmbedding(n_components=args.d).fit_transform(X)
 
     linkage = args.l
 

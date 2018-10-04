@@ -22,9 +22,23 @@ make install_venv
 
 
 
-## Usage
+## Toolkit
 
-TBA.
+### Document Embeddings Generation with Gensim and spaCy
+
+You can generate document embeddings using the doc2vec algorithm provided via gensim. The source code is initially preprocessed with spaCy with the following pipeline:
+
+1. Stopword Removal
+2. Tokenization
+3. Lemmatization
+
+Embeddings are generated from all .c and .h files to an output file (e.g. embeddings.bin)
+
+#### Usage
+
+```bash
+embeddings.py -h
+```
 
 
 
