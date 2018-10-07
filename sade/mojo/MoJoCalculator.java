@@ -142,7 +142,7 @@ public class MoJoCalculator {
         
         l = mapClusterTagA.size(); /* number of clusters in A */
         m = mapClusterTagB.size(); /* number of clusters in B */
-	System.out.println("l = " + m);
+
 
 
         A = new Cluster[l]; /* create A */
@@ -399,7 +399,7 @@ public class MoJoCalculator {
                 partitionA.addElement(new Vector<String>());
                 for (int i = 0; i < objNumber; i++)
                 {
-                    String obj = st.nextToken().trim(); System.out.println(obj);
+                    String obj = st.nextToken().trim(); 
                     partitionA.elementAt(index).addElement(obj);
                 }
             }
@@ -563,7 +563,7 @@ public class MoJoCalculator {
                 for (int i = 0; i < objNumber; i++)
                 {
                     
-		    String obj = st.nextToken().trim(); System.out.println(obj); System.out.println(strClusterB);
+		    String obj = st.nextToken().trim(); 
                     mapObjectClusterInB.put(obj, strClusterB);
                 }
             }
