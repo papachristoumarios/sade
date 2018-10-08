@@ -1,3 +1,10 @@
+# Stability of clustering algorithms
+# Author : Marios Papachristou
+# References
+# [1] Tzerpos, Vassilios, and Richard C. Holt. "On the stability of software clustering algorithms."
+# Program Comprehension, 2000. Proceedings. IWPC 2000. 8th International Workshop on. IEEE, 2000.
+
+# Imports
 import community
 import mojo
 import matplotlib.pyplot as plt
@@ -5,8 +12,8 @@ import networkx as nx
 import random
 import collections
 
-def sca_stability(S, K, cluster_fcn, mode='-m+', plot=True, **args):
-
+def stability(S, K, cluster_fcn, mode='-m+', plot=True, **args):
+    # Stability measure based on [1]
     initial_partition = cluster_fcn(S)
     mojo.generate_bunch(initial_partition, 'initial.bunch')
 
@@ -62,8 +69,7 @@ def sca_stability(S, K, cluster_fcn, mode='-m+', plot=True, **args):
 
     return counter / K * 100
 
-
-
+# Louvain Clustering
 def louvain_clustering(S):
     def get_communities(partition):
         communities = collections.defaultdict(list)
@@ -76,21 +82,7 @@ def louvain_clustering(S):
     p = community.best_partition(S)
     return get_communities(p)
 
-def dummy_cluster_fcn(S):
-
-    N = len(S.nodes())
-    K = 5
-    dummy_partition = collections.defaultdict(list)
-
-    for n in S.nodes():
-        cl = random.randint(1, K)
-        dummy_partition[cl].append(n)
-
-    return dummy_partition
-
-def test_stability():
-    G = nx.complete_graph(10)
-    import community
-    print(sca_stability(G, 2, louvain_clustering))
-
-test_stability()
+# Test stability with Erdos-Renyi Random Graph G(n, p)
+def test_stability(N=100, p=0.5):
+    G = nx.erdos_renyi_graph(N, p)
+    print('Stability Measure = ', stability(G, 20, louvain_clustering))
