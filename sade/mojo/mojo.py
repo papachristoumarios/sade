@@ -1,12 +1,13 @@
-# Wrapper for MoJo Distance 
-import subprocess 
+# Wrapper for MoJo Distance
+import subprocess
 import os
 
-os.system('javac MoJo.java') 
+os.system('javac MoJo.java')
 
 # Wrapper for mojo distance
 def mojo(source, target, mode, **args):
-	out = subprocess.check_output('java MoJo {} {} {}'.format(source, target, ' '.join(args)), shell=True)
+	cmd = 'java MoJo {} {} {} {}'.format(source, target, mode, ' '.join(args))
+	out = subprocess.check_output(cmd, shell=True)
 	try:
 		return int(out.decode().strip())
 	except:
@@ -16,6 +17,4 @@ def mojo(source, target, mode, **args):
 def generate_bunch(partition, outfile):
 	with open(outfile, 'w+') as f:
 		for key, val in partition.items():
-			f.write('SS({}.ss) = {}'.format(val[0], ', '.join(val))
-
-		
+			f.write('{} = {}\n'.format(str(key), ', '.join(map(str, val))))
