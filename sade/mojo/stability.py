@@ -1,3 +1,4 @@
+import community
 import mojo
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -26,7 +27,6 @@ def sca_stability(S, K, cluster_fcn, mode='-m+', plot=True, **args):
         #
         # for n in deleted_nodes:
         #     S.remove_node(n)
-
 
         # add edges
         add_edges_count = int(0.005 * N)
@@ -62,6 +62,20 @@ def sca_stability(S, K, cluster_fcn, mode='-m+', plot=True, **args):
 
     return counter / K * 100
 
+
+
+def louvain_clustering(S):
+    def get_communities(partition):
+        communities = collections.defaultdict(list)
+
+        for u, v in partition.items():
+            communities[v].append(u)
+
+        return communities
+
+    p = community.best_partition(S)
+    return get_communities(p)
+
 def dummy_cluster_fcn(S):
 
     N = len(S.nodes())
@@ -75,5 +89,8 @@ def dummy_cluster_fcn(S):
     return dummy_partition
 
 def test_stability():
-    G = nx.complete_graph(2000)
-    print(sca_stability(G, 2, dummy_cluster_fcn))
+    G = nx.complete_graph(10)
+    import community
+    print(sca_stability(G, 2, louvain_clustering))
+
+test_stability()
