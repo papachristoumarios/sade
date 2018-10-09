@@ -21,8 +21,8 @@ def stability(S, K, cluster_fcn, mode='-m+', plot=True, **args):
     counter = 0
     N = len(S.nodes())
     for j in range(K):
-        delete_edges_count = int(0.01 * N)
-        delete_nodes_count = int(0.025 * N)
+        delete_edges_count = int(0.001 * N)
+        delete_nodes_count = int(0.0025 * N)
 
         # delete edges and nodes
         deleted_edges = random.sample(S.edges(), delete_edges_count)
@@ -30,12 +30,12 @@ def stability(S, K, cluster_fcn, mode='-m+', plot=True, **args):
             S.remove_edge(*e)
 
         deleted_nodes = random.sample(list(S.nodes()), delete_nodes_count)
-        #S.remove_nodes_from(deleted_nodes)
+        # S.remove_nodes_from(deleted_nodes)
 
         # add edges
-        add_edges_count = int(0.05 * N)
+        add_edges_count = int(0.005 * N)
 
-        connect_nodes_count =  int(0.0025 * N)
+        connect_nodes_count =  int(0.00025 * N)
 
         for i in range(add_edges_count):
             u = random.getrandbits(64)
@@ -64,7 +64,7 @@ def stability(S, K, cluster_fcn, mode='-m+', plot=True, **args):
         plt.title('Clustering Stability')
         plt.show()
 
-    return counter / K * 100
+    return counter / K * 100, distances
 
 # Louvain Clustering
 def louvain_clustering(S):
@@ -80,7 +80,6 @@ def louvain_clustering(S):
     return get_communities(p)
 
 # Test stability with Erdos-Renyi Random Graph G(n, p)
-def test_stability(N=100, p=0.5):
+def test_stability(N=1000, p=0.5):
     G = nx.erdos_renyi_graph(N, p)
-    print(G.nodes())
     print('Stability Measure = ', stability(G, 20, louvain_clustering))

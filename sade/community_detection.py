@@ -105,7 +105,7 @@ def get_communities(partition):
 
     return communities
 
-def get_mean_embeddings(communities, model):
+def get_mean_embeddings(communities, model=None):
     embeddings = {}
 
     for idx, files in communities.items():
@@ -113,8 +113,11 @@ def get_mean_embeddings(communities, model):
 
     return embeddings
 
-def construct_induced_directed_graph(communities, partition, G):
-    H = nx.DiGraph()
+def construct_induced_graph(embeddings, partition, G, directed=True):
+    if directed:
+        H = nx.DiGraph()
+    else:
+        H = nx.Graph()
 
     # Construct non-weighted H
     for u, v in G.edges():
@@ -125,7 +128,7 @@ def construct_induced_directed_graph(communities, partition, G):
 
     for (u, v, w) in H.edges(data=True):
         # Compute rho
-        uu, vv = communities[u][1], communities[v][1]
+        uu, vv = embeddings[u][1], embeddings[v][1]
 
         rho = get_corr_coeff(uu, vv)
         rho_n = (1.0 - rho) / 2
@@ -149,11 +152,18 @@ def detect_communities(embeddings_filename, dimensions, call_graph_file):
 
         partition = community.best_partition(nx.Graph(G))
         communities = get_communities(partition)
-        communities = get_mean_embeddings(communities, model)
+        embeddings = get_mean_embeddings(communities, model)
 
         pprint.pprint(communities)
 
-        return partition, communities, G, model
+        return partition, communities, embeddings, G, model
+
+def detect_communities_helper(G, model):
+        partition = community.best_partition(nx.Graph(G))
+        communities = get_communities(partition)
+        embeddings = get_mean_embeddings(communities, model)
+        pprint.pprint(communities)
+        return partition, communities, embeddings
 
 
 if __name__ == '__main__':
