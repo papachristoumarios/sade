@@ -81,11 +81,12 @@ def layerize_iterative(embeddings_filename, dimensions, call_graph_file, max_ite
         return G, communities
 
     i = 1
-    while (not is_path(G)) and (i <= max_iter):
+    while (not is_path(G)) and (i <= max_iter) and (len(communities.keys()) > 1):
         print('Iteration ', i)
         G = sade.community_detection.construct_induced_graph(
             embeddings, partition, G, directed=False)
         partition, communities, embdddings = sade.community_detection.detect_communities_helper(G, model)
+
         i += 1
 
 

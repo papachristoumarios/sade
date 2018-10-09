@@ -1,4 +1,4 @@
-# Hierarchical Clustering for Document Embeddings
+cor_coeff# Hierarchical Clustering for Document Embeddings
 # usage: python3 clustering.py -h
 # Author: Marios Papachristou
 
@@ -20,8 +20,21 @@ import argparse
 np.random.seed(0)
 
 # Compute cosine similarity
-def get_corr_coeff(u, v):
-    return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
+def cor_coeff(u, v, normalize=True):
+    rho =  np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
+    if normalize:
+        return (1.0 + rho) / 2
+    else:
+        return rho
+
+def angle_similarity(u, v):
+    rho = cor_coeff(u, v)
+    return 1 - np.arccos(rho) / np.pi
+
+def p_norm(u, v, p):
+    return np.linalg.norm(u - v, order=p)
+
+
 
 # Load data from doc2vec model
 def load_data(embeddings_filename='embeddings.bin'):
@@ -66,7 +79,7 @@ def compute_score(X, labels, y, model):
             u = X[i]
             for j, yj in groups[g]:
                 v = X[j]
-                c = get_corr_coeff(u, v)
+                c = cor_coeff(u, v)
                 correlations[g] = min(c, correlations[g])
 
     print(correlations)
@@ -85,10 +98,7 @@ def generate_graph(call_graph_file, model):
         u, v = line.split()
         try:
             vu, vv = model.docvecs[u], model.docvecs[v]
-            rho = get_corr_coeff(vu, vv)
-
-            # Normalize
-            rho_n = (1.0 + rho) / 2
+            rho = cor_coeff(vu, vv)
 
             G.add_edge(u, v, weight=rho)
 
@@ -130,10 +140,9 @@ def construct_induced_graph(embeddings, partition, G, directed=True):
         # Compute rho
         uu, vv = embeddings[u][1], embeddings[v][1]
 
-        rho = get_corr_coeff(uu, vv)
-        rho_n = (1.0 - rho) / 2
+        rho = cor_coeff(uu, vv)
 
-        w['weight'] = rho_n
+        w['weight'] = rho
 
     print(H.edges(data=True))
     return H
