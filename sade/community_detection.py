@@ -28,7 +28,7 @@ def cor_coeff(u, v, normalize=True):
         return rho
 
 def angle_similarity(u, v):
-    rho = cor_coeff(u, v)
+    rho = cor_coeff(u, v, normalize=False)
     return 1 - np.arccos(rho) / np.pi
 
 def p_norm(u, v, p):
