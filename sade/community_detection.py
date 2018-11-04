@@ -20,10 +20,13 @@ import argparse
 np.random.seed(0)
 
 # Compute cosine similarity
-def cor_coeff(u, v, normalize=True):
+def cor_coeff(u, v, normalize=True, decreasing=False):
     rho =  np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
     if normalize:
-        return (1.0 + rho) / 2
+        if decreasing:
+            return (1.0 - rho) / 2
+        else:
+            return (1.0 + rho) / 2
     else:
         return rho
 

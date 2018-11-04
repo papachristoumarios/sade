@@ -39,7 +39,7 @@ def source_code_document_embeddings(extensions, modules=None, outfile='embedding
 
     files = []
     for ext in extensions:
-        files.extend(list_files('.', ext))
+        files.extend(sade.helpers.list_files('.', ext))
 
     data_samples = []
     for filename in files:
@@ -88,6 +88,7 @@ def source_code_document_embeddings(extensions, modules=None, outfile='embedding
         dbow_words=1,
         negative=5)
     model.build_vocab(taggeddocs)
+
     model.train(
         taggeddocs,
         total_examples=model.corpus_count,
@@ -98,6 +99,7 @@ def source_code_document_embeddings(extensions, modules=None, outfile='embedding
 
 
 def preprocess_data_samples(data_samples):
+
     # Remove first comment (heuristic for copyright related stuff)
     long_comment_regex = r'/\*[^\*/]*\*/'
     for i in range(len(data_samples)):
@@ -154,16 +156,7 @@ def split_underscores(s):
     return s.split('_')
 
 
-def list_files(input_dir, suffix, recursive=True):
-    if recursive:
-        result = []
-        for root, dirs, files in os.walk(input_dir):
-            for file in files:
-                if file.endswith(suffix):
-                    result.append(os.path.join(root, file))
-    else:
-        result = glob.glob('*{}'.format(suffix))
-    return result
+
 
 
 if __name__ == '__main__':

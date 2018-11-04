@@ -8,7 +8,7 @@ import pickle
 import multiprocessing
 import sade.community_detection
 import sade.mdst
-
+import sade.helpers
 
 def bfs(G, s):
     depth = {}
@@ -51,7 +51,7 @@ def layerize_mdst(embeddings_filename, dimensions, call_graph_file):
             for c in _communities:
                 layers[lvl] = layers[lvl] + embeddings[c][0]
 
-        pprint.pprint(layers)
+        return layers
 
 def is_path(G):
     r = list(G.nodes())[0]
@@ -105,10 +105,16 @@ if __name__ == '__main__':
         type=int,
         help='Number of dimensions to reduce Embeddings Space',
         default=-1)
-    argparser.add_argument('--type', type=str, help='Type of layerization', default='iterative')
+    argparser.add_argument('--type', type=str, help='Type of layerization', default='mdst')
+    argparser.add_argument('--export', type=str, help='Export Type (json or bunch)', default='bunch')
     args = argparser.parse_args()
 
     if args.type == 'iterative':
-        layerize_iterative(embeddings_filename=args.e, dimensions=args.d, call_graph_file=args.g)
+        layers = layerize_iterative(embeddings_filename=args.e, dimensions=args.d, call_graph_file=args.g)
     elif args.type == 'mdst':
-        layerize_mdst(embeddings_filename=args.e, dimensions=args.d, call_graph_file=args.g)
+        layers = layerize_mdst(embeddings_filename=args.e, dimensions=args.d, call_graph_file=args.g)
+
+    if args.export == 'json':
+        print(json.dumps(layers, indent=4, separators=(',', ': ')))
+    elif args.export == 'bunch':
+        print(sade.helpers.generate_bunch(layers))    

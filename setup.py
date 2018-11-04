@@ -8,5 +8,5 @@ setup(name='sade',
       author_email='papachristoumarios@gmail.com',
       url='https://github.com/papachristoumarios/sade',
       packages=['sade'],
-      scripts=['sade/clustering.py', 'sade/embeddings.py', 'sade/corrcoef.py', 'sade/layerize.py', 'sade/community_detection.py']	
+      scripts=['sade/clustering.py', 'sade/embeddings.py', 'sade/corrcoef.py', 'sade/layerize.py', 'sade/community_detection.py', 'sade/autogen_module.py', 'sade/json_join.py']	
      )

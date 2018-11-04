@@ -12,6 +12,7 @@ import gensim.models
 from sklearn.cluster import AgglomerativeClustering
 import collections
 import argparse
+from sade.helpers import load_data
 
 np.random.seed(0)
 
@@ -19,16 +20,6 @@ np.random.seed(0)
 def get_corr_coeff(u, v):
     return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
 
-# Load data from doc2vec model
-def load_data(embeddings_filename='embeddings.bin'):
-    model = gensim.models.Doc2Vec.load(embeddings_filename)
-    y = list(model.docvecs.doctags)
-    X = []
-    for x in y:
-        X.append(model.docvecs[x])
-    X = np.array(X)
-
-    return X, y, model
 
 # Plot clustering
 def plot_clustering(X_red, labels, title=None):
@@ -79,7 +70,7 @@ if __name__ == '__main__':
     argparser.add_argument('-d', type=int, help='Number of dimensions to reduce Embeddings Space', default=-1)
     argparser.add_argument('-n', type=int, help='Number of clusters', default=10)
     argparser.add_argument('-l', type=str, help='Linkage Type', default='ward')
-
+    
     args = argparser.parse_args()
 
     X, y, model = load_data(args.e)

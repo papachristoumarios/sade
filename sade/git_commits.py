@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 
 from helpers import *
 
@@ -54,3 +54,8 @@ def get_unique_commits(areas):
                 unique_commits[area] -= unique_commits[aarea]
 
     return unique_commits
+
+
+def checkout(i):
+    _cmd = 'git checkout HEAD^' + str(i)
+    cmd(_cmd)    
