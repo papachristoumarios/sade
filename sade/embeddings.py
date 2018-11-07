@@ -4,7 +4,7 @@
 
 import os
 import spacy
-nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load('en_core_web_lg')
 import re
 import pickle
 import argparse
@@ -18,7 +18,6 @@ import gensim
 from gensim.models.doc2vec import TaggedDocument
 from gensim.parsing.preprocessing import preprocess_string, remove_stopwords
 import logging
-from matplotlib import pyplot as plt
 import numpy as np
 import sade.helpers
 
@@ -50,25 +49,20 @@ def source_code_document_embeddings(extensions, modules=None, outfile='embedding
                 data_samples.append(content)
             except BaseException:
                 continue
-    stopwords = build_stoplist(data_samples, 10)
-    stopwords_regex = '|'.join(stopwords)
+    stopwords = build_stoplist(data_samples)
 
-    for i in range(len(data_samples)):
-        data_samples[i] = remove_stopwords(data_samples[i])
+    data_samples = preprocess_data_samples(data_samples=data_samples, stopwords=stopwords)
+
 
     print('Build dataset')
     taggeddocs = []
 
     for filename, sample in zip(files, data_samples):
-        lines = sample.splitlines()
-        words = []
-        for line in lines:
-            words.extend(line.split())
 
         if modules == None:
-            td = TaggedDocument(words=words, tags=[sade.helpers.basename(filename)])
+            td = TaggedDocument(words=sample, tags=[sade.helpers.basename(filename)])
         else:
-            td = TaggedDocument(words=words, tags=[module[filename]])
+            td = TaggedDocument(words=sample, tags=[module[filename]])
 
         taggeddocs.append(td)
 
@@ -98,7 +92,7 @@ def source_code_document_embeddings(extensions, modules=None, outfile='embedding
     return model
 
 
-def preprocess_data_samples(data_samples):
+def preprocess_data_samples(data_samples, stopwords):
 
     # Remove first comment (heuristic for copyright related stuff)
     long_comment_regex = r'/\*[^\*/]*\*/'
@@ -108,22 +102,28 @@ def preprocess_data_samples(data_samples):
             start, end = first_comment.span()
             data_samples[i] = data_samples[i][:end]
 
-    # Remove stopwords
+    stopwords_regex = '|'.join(map(re.escape, stopwords))
+
     for i in range(len(data_samples)):
-        data_samples[i] = remove_stopwords(data_samples[i]).split()
+        data_samples[i] = re.sub(stopwords_regex, '', data_samples[i])
 
     # Split camel-case and Lemmatize
-    for i, sample in enumerate(data_samples):
+    for j, sample in enumerate(data_samples):
         result = []
-        for word in sample:
-            components = split_underscores(word)
+        words = re.split('\s+', sample)
+        for i, word in enumerate(words):
+            components = pipelined_removals(word)
+            words[i] = ' '.join(components)
+        words = ' '.join(words)
 
-            for c in components:
-                doc = nlp(c)
-                for token in doc:
-                    result.extend(token.lemma_)
 
-        data_samples[i] = result
+        doc = nlp(words)
+        for token in doc:
+            result.append(token.lemma_.lower())
+
+        data_samples[j] = result
+
+    return data_samples
 
 
 def build_stoplist(data_samples, most_common=100):
@@ -146,7 +146,7 @@ def build_stoplist(data_samples, most_common=100):
 
 
 def camel_case_split(identifier):
-    matches = finditer(
+    matches = re.finditer(
         '.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)',
         identifier)
     return [m.group(0).lower() for m in matches]
@@ -154,6 +154,31 @@ def camel_case_split(identifier):
 
 def split_underscores(s):
     return s.split('_')
+
+def remove_nonalpha(s):
+    return ''.join([x for x in s if x.isalpha()])
+
+def expand(s):
+    expanders = ['(', ')', '{', '}', '[', ']', '%', '\n']
+    return list(filter(lambda x : x != '', multi_split(expanders, s)))
+
+def multi_split(delimiters, string, maxsplit=0):
+    regexPattern = '|'.join(map(re.escape, delimiters))
+    return re.split(regexPattern, string, maxsplit)
+
+def pipelined_removals(s, pipeline=[expand, split_underscores, camel_case_split], cleaner=remove_nonalpha):
+    result = pipeline[0](s)
+    for component in pipeline[1:]:
+        temp = []
+        for token in result:
+            temp.extend(component(token))
+        result = temp
+
+
+    for i, r in enumerate(result):
+        result[i] = cleaner(r)
+
+    return result
 
 
 
