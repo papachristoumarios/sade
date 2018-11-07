@@ -4,7 +4,7 @@
 
 import os
 import spacy
-nlp = spacy.load('en_core_web_lg')
+nlp = spacy.load('en_core_web_sm')
 import re
 import pickle
 import argparse
@@ -33,7 +33,7 @@ def get_areas():
 
 def source_code_document_embeddings(extensions, modules=None, outfile='embeddings.bin'):
     if modules != None:
-        modules = json.loads(open(modules, 'r'))
+        modules = json.loads(open(modules, 'r').read())
 
 
     files = []
