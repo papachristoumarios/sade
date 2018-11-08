@@ -22,15 +22,41 @@ import numpy as np
 import sade.helpers
 from spacy.lang.en.lemmatizer import LOOKUP
 from spacy.lang.en import English
+import spacy
+nlp = spacy.load('en_core_web_sm')
 
 
 logging.basicConfig(
     format='%(asctime)s : %(levelname)s : %(message)s',
     level=logging.INFO)
 
+default_params = {
+    "size": 300,
+    "window" : 10,
+    "epochs" : 1000,
+    "min_count": 10,
+    "workers": multiprocessing.cpu_count() - 1,
+    "sample": 1E-3
+}
+
+
 
 def lookup(x):
     return LOOKUP.get(x, x)
+
+
+def longest_subsequence_in_vocab(x):
+    n = len(x)
+    ans = ''
+    for j in range(n):
+        for i in range(j):
+            if len(x[i:j]) > len(ans):
+                if x[i:j] in nlp.vocab:
+                    ans = x[i:j]
+    if ans == '':
+        return x
+    else:
+        return ans
 
 
 def get_areas():
@@ -40,6 +66,7 @@ def get_areas():
 
 def source_code_document_embeddings(
         extensions,
+        params=default_params,
         modules=None,
         outfile='embeddings.bin'):
     if modules is not None:
@@ -73,25 +100,14 @@ def source_code_document_embeddings(
                 words=sample, tags=[
                     sade.helpers.basename(filename)])
         else:
-            td = TaggedDocument(words=sample, tags=[module[filename]])
+            td = TaggedDocument(words=sample, tags=[modules[filename]])
 
         taggeddocs.append(td)
 
     print('Generated dataset')
 
-    model = gensim.models.Doc2Vec(
-        window=8,
-        dm=0,
-        hs=0,
-        min_count=2,
-        alpha=0.1,
-        vector_size=200,
-        min_alpha=0.0001,
-        epochs=50,
-        workers=6,
-        sample=1e-5,
-        dbow_words=1,
-        negative=5)
+    model = gensim.models.Doc2Vec(**params)
+
     model.build_vocab(taggeddocs)
 
     model.train(
@@ -141,7 +157,6 @@ def preprocess_data_samples(data_samples, stopwords):
             lambda sample: (
                 sample, stopwords_regex), data_samples))
 
-    print(results)
 
     return results
 
@@ -180,6 +195,11 @@ def remove_nonalpha(s):
     return ''.join([x for x in s if x.isalpha()])
 
 
+def clean_token(s):
+    s = remove_nonalpha(s)
+    return longest_subsequence_in_vocab(s)
+
+
 def expand(s):
     expanders = ['(', ')', '{', '}', '[', ']', '%', '\n']
     return list(filter(lambda x: x != '', multi_split(expanders, s)))
@@ -215,6 +235,7 @@ if __name__ == '__main__':
         description='Generate document embeddings')
     argparser.add_argument('-d', type=str, default='.', help='Directory')
     argparser.add_argument('-m', type=str, help='Modules')
+    argparser.add_argument('-p', type=str, help='Doc2Vec Parameters Configuration', default='')
     argparser.add_argument(
         '-o',
         type=str,
@@ -225,5 +246,10 @@ if __name__ == '__main__':
 
     os.chdir(args.d)
 
+    if args.p == '':
+        params = default_params
+    else:
+        params = json.loads(open(args.p).read())
+
     source_code_document_embeddings(
-        ['.c', '.h'], modules=args.m, outfile=args.o)
+        ['.c', '.h'], modules=args.m, outfile=args.o, params=params)

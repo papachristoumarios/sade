@@ -69,11 +69,11 @@ A `params.json` file example:
 
 ```json
 {
-    'size': 200, 
-    'window': 10, 
-    'min_count': 10,
-    'workers':7, 
-    'sample': 1E-3
+    "size": 200, 
+    "window" : 10, 
+    "min_count": 10,
+    "workers":7, 
+    "sample": 1E-3
 }
 ```
 
