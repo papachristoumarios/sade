@@ -116,6 +116,23 @@ You can get all the call graphs via running `scripts/get_graphs_rest.sh`.
 
 
 
+#### Pre-generated call graph for Linux Kernel 4.21
+
+A pre-generated call graph of Linux Kernel 4.21 (20.1 million lines of source code) can be found [here](https://pithos.okeanos.grnet.gr/public/qJajffcQ7qEQwqXNrKkAW5). The call graphs come to a format:
+
+```
+u1 v1
+u2 v2 
+// more edges
+un vn
+```
+
+where `ui vi` is a directed edge from `ui` to `vi`. 
+
+The call graph was generated on an Intel(R) Xeon(R) CPU E5-1410 0 @ 2.80GHz with 72G of RAM. 
+
+
+
 ### Step 4: Getting the layers configuration
 
 After generating the embeddings you can use the `layerize.py` tool to get the proposed layered architecture. You can do it by:
