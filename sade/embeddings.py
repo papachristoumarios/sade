@@ -2,9 +2,8 @@
 
 # Source Code Document Embeddings Module
 
+import functools
 import os
-import spacy
-nlp = spacy.load('en_core_web_sm')
 import re
 import pickle
 import argparse
@@ -13,6 +12,7 @@ import string
 import glob
 import sys
 import collections
+import multiprocessing
 import subprocess
 import gensim
 from gensim.models.doc2vec import TaggedDocument
@@ -20,10 +20,17 @@ from gensim.parsing.preprocessing import preprocess_string, remove_stopwords
 import logging
 import numpy as np
 import sade.helpers
+from spacy.lang.en.lemmatizer import LOOKUP
+from spacy.lang.en import English
+
 
 logging.basicConfig(
     format='%(asctime)s : %(levelname)s : %(message)s',
     level=logging.INFO)
+
+
+def lookup(x):
+    return LOOKUP.get(x, x)
 
 
 def get_areas():
@@ -31,10 +38,12 @@ def get_areas():
     return set(result)
 
 
-def source_code_document_embeddings(extensions, modules=None, outfile='embeddings.bin'):
-    if modules != None:
+def source_code_document_embeddings(
+        extensions,
+        modules=None,
+        outfile='embeddings.bin'):
+    if modules is not None:
         modules = json.loads(open(modules, 'r').read())
-
 
     files = []
     for ext in extensions:
@@ -51,16 +60,18 @@ def source_code_document_embeddings(extensions, modules=None, outfile='embedding
                 continue
     stopwords = build_stoplist(data_samples)
 
-    data_samples = preprocess_data_samples(data_samples=data_samples, stopwords=stopwords)
-
+    data_samples = preprocess_data_samples(
+        data_samples=data_samples, stopwords=stopwords)
 
     print('Build dataset')
     taggeddocs = []
 
     for filename, sample in zip(files, data_samples):
 
-        if modules == None:
-            td = TaggedDocument(words=sample, tags=[sade.helpers.basename(filename)])
+        if modules is None:
+            td = TaggedDocument(
+                words=sample, tags=[
+                    sade.helpers.basename(filename)])
         else:
             td = TaggedDocument(words=sample, tags=[module[filename]])
 
@@ -92,38 +103,47 @@ def source_code_document_embeddings(extensions, modules=None, outfile='embedding
     return model
 
 
-def preprocess_data_samples(data_samples, stopwords):
+def _process(document):
+    sample, stopwords_regex = document
 
     # Remove first comment (heuristic for copyright related stuff)
     long_comment_regex = r'/\*[^\*/]*\*/'
-    for i in range(len(data_samples)):
-        first_comment = re.search(long_comment_regex, data_samples[i])
-        if first_comment is not None:
-            start, end = first_comment.span()
-            data_samples[i] = data_samples[i][:end]
+    first_comment = re.search(long_comment_regex, sample)
+    if first_comment is not None:
+        start, end = first_comment.span()
+        sample = sample[:end]
 
-    stopwords_regex = '|'.join(map(re.escape, stopwords))
-
-    for i in range(len(data_samples)):
-        data_samples[i] = re.sub(stopwords_regex, '', data_samples[i])
+    sample = re.sub(stopwords_regex, '', sample)
 
     # Split camel-case and Lemmatize
-    for j, sample in enumerate(data_samples):
-        result = []
-        words = re.split('\s+', sample)
-        for i, word in enumerate(words):
-            components = pipelined_removals(word)
-            words[i] = ' '.join(components)
-        words = ' '.join(words)
+
+    result = []
+    tokens = filter(lambda x : x != '', sample.split())
+    components = []
+
+    for token in tokens:
+        components.extend(pipelined_removals(token))
+
+    for word in components:
+        lemma = lookup(word.lower())
+        result.append(lemma)
+
+    return list(filter(lambda x : x != '', result))
 
 
-        doc = nlp(words)
-        for token in doc:
-            result.append(token.lemma_.lower())
+def preprocess_data_samples(data_samples, stopwords):
 
-        data_samples[j] = result
+    pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+    stopwords_regex = '|'.join(map(re.escape, stopwords))
 
-    return data_samples
+    results = pool.map(
+        _process, map(
+            lambda sample: (
+                sample, stopwords_regex), data_samples))
+
+    print(results)
+
+    return results
 
 
 def build_stoplist(data_samples, most_common=100):
@@ -155,18 +175,28 @@ def camel_case_split(identifier):
 def split_underscores(s):
     return s.split('_')
 
+
 def remove_nonalpha(s):
     return ''.join([x for x in s if x.isalpha()])
 
+
 def expand(s):
     expanders = ['(', ')', '{', '}', '[', ']', '%', '\n']
-    return list(filter(lambda x : x != '', multi_split(expanders, s)))
+    return list(filter(lambda x: x != '', multi_split(expanders, s)))
+
 
 def multi_split(delimiters, string, maxsplit=0):
     regexPattern = '|'.join(map(re.escape, delimiters))
     return re.split(regexPattern, string, maxsplit)
 
-def pipelined_removals(s, pipeline=[expand, split_underscores, camel_case_split], cleaner=remove_nonalpha):
+
+def pipelined_removals(
+        s,
+        pipeline=[
+            expand,
+            split_underscores,
+            camel_case_split],
+        cleaner=remove_nonalpha):
     result = pipeline[0](s)
     for component in pipeline[1:]:
         temp = []
@@ -174,24 +204,26 @@ def pipelined_removals(s, pipeline=[expand, split_underscores, camel_case_split]
             temp.extend(component(token))
         result = temp
 
-
     for i, r in enumerate(result):
         result[i] = cleaner(r)
 
     return result
 
 
-
-
-
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description='Generate document embeddings')
+    argparser = argparse.ArgumentParser(
+        description='Generate document embeddings')
     argparser.add_argument('-d', type=str, default='.', help='Directory')
     argparser.add_argument('-m', type=str, help='Modules')
-    argparser.add_argument('-o', type=str, help='Output File', default='embeddings.bin')
+    argparser.add_argument(
+        '-o',
+        type=str,
+        help='Output File',
+        default='embeddings.bin')
 
     args = argparser.parse_args()
 
     os.chdir(args.d)
 
-    source_code_document_embeddings(['.c', '.h'], modules=args.m, outfile=args.o)
+    source_code_document_embeddings(
+        ['.c', '.h'], modules=args.m, outfile=args.o)
