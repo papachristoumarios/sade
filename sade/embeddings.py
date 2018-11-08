@@ -33,7 +33,6 @@ logging.basicConfig(
 default_params = {
     "size": 300,
     "window" : 10,
-    "epochs" : 1000,
     "min_count": 10,
     "workers": multiprocessing.cpu_count() - 1,
     "sample": 1E-3
