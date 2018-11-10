@@ -77,6 +77,9 @@ def best_partition_bipartite(G):
         else:
             communities[parent[val]] |= {inv_mapping[key]}
 
+    for key, val in communities.items():
+        communities[key] = list(val)
+
     return communities
 
 
@@ -110,6 +113,10 @@ if __name__ == '__main__':
         partition = community.best_partition(G)
         communities = get_communities(partition)
 
-    pprint.pprint(communities)
+    if args.bunchify:
+        print(sade.helpers.generate_bunch(communities))
+    else:
+        print(json.dumps(communities, indent=4, separators=(',', ': ')))
+
 
     if args.stats: community_statistics(communities)

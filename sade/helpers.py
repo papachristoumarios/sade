@@ -34,7 +34,15 @@ def load_data(embeddings_filename='embeddings.bin'):
     return X, y, model
 
 # Generate .bunch files
-def generate_bunch(partition, outfile):
-	with open(outfile, 'w+') as f:
-		for key, val in partition.items():
-			f.write('{} = {}\n'.format(str(key), ', '.join(map(str, val))))
+def generate_bunch(partition, outfile=None):
+    result = ''
+    for key, val in partition.items():
+        result = result + '{} = {}\n'.format(str(key), ', '.join(map(str, val)))
+
+    if outfile == None:
+        print(result)
+    else:
+        with open(outfile, 'w+') as f:
+            f.write(result)
+
+    return result
