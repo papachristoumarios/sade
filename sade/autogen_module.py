@@ -9,11 +9,12 @@ import sade.helpers
 import collections
 
 
-def gen_module_dict(depth=-1, inverse=False, suffix=['.c']):
+def gen_module_dict(depth=-1, inverse=False, suffix=['.c', '.h']):
     """Generate a module mapping"""
     filelist = []
     for s in suffix:
-        filelist = sade.helpers.list_files('.', suffix=s, recursive=True)
+        filelist.extend(sade.helpers.list_files('.', suffix=s, recursive=True))
+
     if inverse:
         modules = collections.defaultdict(list)
     else:
