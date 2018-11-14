@@ -9,9 +9,11 @@ import sade.helpers
 import collections
 
 
-def gen_module_dict(depth=-1, inverse=False, suffix='.c'):
+def gen_module_dict(depth=-1, inverse=False, suffix=['.c']):
     """Generate a module mapping"""
-    filelist = sade.helpers.list_files('.', suffix=suffix, recursive=True)
+    filelist = []
+    for s in suffix:
+        filelist = sade.helpers.list_files('.', suffix=s, recursive=True)
     if inverse:
         modules = collections.defaultdict(list)
     else:
@@ -41,7 +43,7 @@ if __name__ == '__main__':
         '--inv',
         action='store_true',
         help='Generate Inverse Mapping')
-    argparser.add_argument('--suffix', default='.c', help='File suffix')
+    argparser.add_argument('--suffix', action='append', help='File suffix')
     args = argparser.parse_args()
 
     modules = gen_module_dict(
