@@ -11,6 +11,7 @@ import pprint
 import numpy as np
 import argparse
 import sade.helpers
+import json
 
 def get_communities(partition):
     communities = collections.defaultdict(list)
@@ -45,6 +46,8 @@ def best_partition_bipartite(G):
     mapping = {}
     inv_mapping = {}
 
+
+    # Bipartite transformation
     for u in G.nodes():
         hu = hash(u)
         H.add_node(u)
@@ -89,6 +92,7 @@ if __name__ == '__main__':
     argparser.add_argument('--bunchify', help='Generate bunch file (default is json)', action='store_true')
     argparser.add_argument('--stats', help='Print statistics to stdout', action='store_true')
     argparser.add_argument('--directed', help='Run directed analogue with transformation to bipartite network', action='store_true')
+    argparser.add_argument('-c', help='Contract Call Graph Using a Module/Layer Definition file', default='')
     args = argparser.parse_args()
 
     edges = sys.stdin.read().splitlines()
@@ -107,6 +111,10 @@ if __name__ == '__main__':
             u, v, w = parts
             G.add_edge(u, v, weight=float(w))
 
+    if args.c != '':
+        contraction = json.loads(open(args.c, 'r').read())
+        G = sade.helpers.contract_graph(G, contraction)
+
     if args.directed:
         communities = best_partition_bipartite(G)
     else:
@@ -119,4 +127,5 @@ if __name__ == '__main__':
         print(json.dumps(communities, indent=4, separators=(',', ': ')))
 
 
-    if args.stats: community_statistics(communities)
+    if args.stats:
+        community_statistics(communities)

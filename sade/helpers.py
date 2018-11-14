@@ -54,13 +54,10 @@ def contract_graph(G, contraction_mapping):
     elif isinstance(G, nx.DiGraph):
         H = nx.DiGraph()
 
-    total = 0
-    miss = 0
     for (u, v) in G.edges():
         try:
             H.add_edge(contraction_mapping[u], contraction_mapping[v], weight=1)
         except:
             pass
 
-    print('Total ', total, 'Missing', missing)
     return H

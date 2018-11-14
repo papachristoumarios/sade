@@ -23,6 +23,7 @@ import sade.helpers
 from spacy.lang.en.lemmatizer import LOOKUP
 from spacy.lang.en import English
 import spacy
+import sade.helpers
 nlp = spacy.load('en_core_web_sm')
 
 
@@ -93,13 +94,12 @@ def source_code_document_embeddings(
     taggeddocs = []
 
     for filename, sample in zip(files, data_samples):
-
+        base = sade.helpers.basename(filename)
         if modules is None:
             td = TaggedDocument(
-                words=sample, tags=[
-                    sade.helpers.basename(filename)])
+                words=sample, tags=[base])
         else:
-            td = TaggedDocument(words=sample, tags=[modules[filename]])
+            td = TaggedDocument(words=sample, tags=[modules[base]])
 
         taggeddocs.append(td)
 
