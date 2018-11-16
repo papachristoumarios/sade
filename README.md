@@ -1,12 +1,12 @@
 # SADE: Software Architecture with Document Embeddings
 
-## What is SADE? 
+## What is SADE?
 
-SADE (abbreviated as Software Architecture with Document Embeddings) is a library for studying and recovering the architectures of complex softwares systems. Our approach uses a combination of document embeddings on the source code provided by **Doc2Vec** as well as the existing structure of the codebase via the call graph. Document embeddings have never been used before to study the architecture of a software system. We will construct a geometric graph on a metric space and iteratively and form communities in this graph ariving at a layered architecture viewed from the call graph perspective. It has been applied on the Linux Kernel codebase and will be compared to its existing layered architecture using **MoJo** distance as a clusterings metric as well as, compare its stability and extremity compared to other Software Clustering. 
+SADE (abbreviated as Software Architecture with Document Embeddings) is a library for studying and recovering the architectures of complex softwares systems. Our approach uses a combination of document embeddings on the source code provided by **Doc2Vec** as well as the existing structure of the codebase via the call graph. Document embeddings have never been used before to study the architecture of a software system. We will construct a geometric graph on a metric space and iteratively and form communities in this graph ariving at a layered architecture viewed from the call graph perspective. It has been applied on the Linux Kernel codebase and will be compared to its existing layered architecture using **MoJo** distance as a clusterings metric as well as, compare its stability and extremity compared to other Software Clustering.
 
-The software is released under the MIT License. 
+The software is released under the MIT License.
 
-## Installation 
+## Installation
 
 Installing system/user-wide (with sudo if system-wide):
 
@@ -22,9 +22,9 @@ make install_venv
 
 
 
-## Usage 
+## Usage
 
-With SADE you can analyze your C project using the components provided by it. Below there are steps on how you should do it. We will be using [CScout](https://github.com/dspinellis/cscout) for Static Graph Analysis. 
+With SADE you can analyze your C project using the components provided by it. Below there are steps on how you should do it. We will be using [CScout](https://github.com/dspinellis/cscout) for Static Graph Analysis.
 
 
 
@@ -42,10 +42,16 @@ For defining the modules of the system, each file must map to a module. You shou
 You can do this manually, but in case the project is strictly organized into modules (as directories) you can use the `autogen_module` tool to generate the module definition. You can do this by:
 
 ```bash
-autogen_module.py -d 1
+autogen_module.py --suffix .c --suffix .h -d 1 >modules.json
 ```
 
 where the `-d` specifies the depth that the modules must be split. An example is located at `examples/linux/modules.json`.
+
+For scalability purposes you can manually set the `--suffix` arguments for other languages. For example, for a C++ project
+
+```bash
+autogen_module.py --suffix .cpp --suffix .h -d 1 >modules.json
+```
 
 
 
@@ -53,7 +59,7 @@ where the `-d` specifies the depth that the modules must be split. An example is
 
 After creating the `modules.json` definitions file you can proceed generating the Doc2Vec using Gensim and spaCy preprocessed with the following pipeline:
 
-1. Stop-word Removal
+1. autogen_module.py --suffix .c --suffix .h -d 1 >modules.jsonStop-word Removal
 2. Tokenization
 3. Lemmatization
 
@@ -63,16 +69,17 @@ You can generate the embeddings with the `embeddings.py` script using
 embeddings.py -m modules.json -o embeddings.bin -p params.json
 ```
 
-You can configure it further by passing parameters for the model with `-p` flag as a `params.json` file. 
+You can configure it further by passing parameters for the model with `-p` flag as a `params.json` file.
 
 A `params.json` file example:
 
 ```json
 {
-    "size": 200, 
-    "window" : 10, 
+    "size": 200,
+    "epochs" : 1000,
+    "window" : 10,
     "min_count": 10,
-    "workers":7, 
+    "workers":7,
     "sample": 1E-3
 }
 ```
@@ -99,20 +106,20 @@ After generating the `make.cs` file you can analyze it with CScout via
 cscout make.cs
 ```
 
-CScout may complain for undefined names. What you can to is to place their respective definitions to `cscout-pre-defs.h` (before `csmake`) and to `cscout-post-defs.h`. For more information on it, please refer to [CScout Documentation](https://www2.dmst.aueb.gr/dds/cscout/doc). 
+CScout may complain for undefined names. What you can to is to place their respective definitions to `cscout-pre-defs.h` (before `csmake`) and to `cscout-post-defs.h`. For more information on it, please refer to [CScout Documentation](https://www2.dmst.aueb.gr/dds/cscout/doc).
 
-An example of such configuration for the Linux Kernel 4.x Codebase is located at `examples/linux` . 
+An example of such configuration for the Linux Kernel 4.x Codebase is located at `examples/linux` .
 
-Finally, you can send `GET` requests to CScout and get responses through its REST API. 
+Finally, you can send `GET` requests to CScout and get responses through its REST API.
 
 For example:
 
 ```bash
-# Call graph (functions) 
+# Call graph (functions)
 curl -X GET "http://localhost:8081/cgraph.txt" >graph.txt
 ```
 
-You can get all the call graphs via running `scripts/get_graphs_rest.sh`. 
+You can get all the call graphs via running `scripts/get_graphs_rest.sh`.
 
 
 
@@ -122,14 +129,14 @@ A pre-generated call graph of Linux Kernel 4.21 (20.1 million lines of source co
 
 ```
 u1 v1
-u2 v2 
+u2 v2
 // more edges
 un vn
 ```
 
-where `ui vi` is a directed edge from `ui` to `vi`. 
+where `ui vi` is a directed edge from `ui` to `vi`.
 
-The call graph was generated on an Intel(R) Xeon(R) CPU E5-1410 0 @ 2.80GHz with 72G of RAM. 
+The call graph was generated on an Intel(R) Xeon(R) CPU E5-1410 0 @ 2.80GHz with 72G of RAM.
 
 
 
@@ -179,20 +186,30 @@ SADE was developed in Python 3.x using the following libraries:
 
 
 
-## Toolkit
+## Using SADE to analyze projects in other programming languages
 
-### Document Embeddings Generation with Gensim and spaCy
+### Generating the call graph
 
-Embeddings are generated from all .c and .h files to an output file (e.g. embeddings.bin)
+You can use SADE with a different static call graph analyzer tool for your preferred language. The format that SADE understands is of the form
 
-#### Usage
-
-```bash
-embeddings.py -h
+```
+foo.c boo.c
 ```
 
+which indicates a **directed** edge from `foo.c` to `boo.c`. 
+
+### Module Definitions
+
+The module definitions are, as explained above, contained in JSON files.
 
 
-## Citing the Project 
 
- 
+### Clustering Results
+
+The clustering results are, as explained above, contained in JSON or Bunch files.
+
+
+
+
+
+## Citing the Project
