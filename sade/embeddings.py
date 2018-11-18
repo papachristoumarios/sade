@@ -33,12 +33,11 @@ logging.basicConfig(
 
 default_params = {
     "size": 300,
-    "window" : 10,
+    "window": 10,
     "min_count": 10,
     "workers": multiprocessing.cpu_count() - 1,
     "sample": 1E-3
 }
-
 
 
 def lookup(x):
@@ -133,7 +132,7 @@ def _process(document):
     # Split camel-case and Lemmatize
 
     result = []
-    tokens = filter(lambda x : x != '', sample.split())
+    tokens = filter(lambda x: x != '', sample.split())
     components = []
 
     for token in tokens:
@@ -143,7 +142,7 @@ def _process(document):
         lemma = lookup(word.lower())
         result.append(lemma)
 
-    return list(filter(lambda x : x != '', result))
+    return list(filter(lambda x: x != '', result))
 
 
 def preprocess_data_samples(data_samples, stopwords):
@@ -155,7 +154,6 @@ def preprocess_data_samples(data_samples, stopwords):
         _process, map(
             lambda sample: (
                 sample, stopwords_regex), data_samples))
-
 
     return results
 
@@ -234,7 +232,11 @@ if __name__ == '__main__':
         description='Generate document embeddings')
     argparser.add_argument('-d', type=str, default='.', help='Directory')
     argparser.add_argument('-m', type=str, help='Modules')
-    argparser.add_argument('-p', type=str, help='Doc2Vec Parameters Configuration', default='')
+    argparser.add_argument(
+        '-p',
+        type=str,
+        help='Doc2Vec Parameters Configuration',
+        default='')
     argparser.add_argument(
         '-o',
         type=str,

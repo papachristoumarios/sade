@@ -6,7 +6,7 @@
 import numpy as np
 from scipy import ndimage
 import os
-if not os.environ.get('DISPLAY') == None:
+if not os.environ.get('DISPLAY') is None:
     HEADLESS = False
     from matplotlib import pyplot as plt
 else:
@@ -23,6 +23,8 @@ from sade.helpers import load_data, generate_bunch
 np.random.seed(0)
 
 # Compute cosine similarity
+
+
 def get_corr_coeff(u, v):
     return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
 
@@ -46,6 +48,8 @@ def plot_clustering(X_red, labels, title=None):
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 # Compute Minimum Correlation in Clusters
+
+
 def compute_score(X, labels, y, model):
     groups = collections.defaultdict(list)
 
@@ -63,21 +67,33 @@ def compute_score(X, labels, y, model):
                 correlations[g] = min(c, correlations[g])
 
     for key, val in groups.items():
-        groups[key] = [elem[0] for elem in val]
-
+        groups[key] = [elem[1] for elem in val]
 
     return groups, min(correlations.values())
 
 
 if __name__ == '__main__':
     # Initialize
-    argparser = argparse.ArgumentParser(description='Hierarchical Clustering from embeddings')
+    argparser = argparse.ArgumentParser(
+        description='Hierarchical Clustering from embeddings')
 
-    argparser.add_argument('-e', type=str, help='Doc2Vec Embeddings', default='embeddings.bin')
-    argparser.add_argument('-d', type=int, help='Number of dimensions to reduce Embeddings Space', default=-1)
-    argparser.add_argument('-n', type=int, help='Number of clusters', default=10)
+    argparser.add_argument(
+        '-e',
+        type=str,
+        help='Doc2Vec Embeddings',
+        default='embeddings.bin')
+    argparser.add_argument(
+        '-d',
+        type=int,
+        help='Number of dimensions to reduce Embeddings Space',
+        default=-1)
+    argparser.add_argument(
+        '-n',
+        type=int,
+        help='Number of clusters',
+        default=10)
     argparser.add_argument('-l', type=str, help='Linkage Type', default='ward')
-    
+
     args = argparser.parse_args()
 
     X, y, model = load_data(args.e)
@@ -94,10 +110,14 @@ if __name__ == '__main__':
     clustering.fit(X)
     print('Linkage: {}'.format(linkage))
     if args.d in [1, 2, 3] and not HEADLESS:
-        plot_clustering(X, clustering.labels_, "Linkage: {}".format(linkage).title())
+        plot_clustering(
+            X,
+            clustering.labels_,
+            "Linkage: {}".format(linkage).title())
     groups, score_red = compute_score(X, clustering.labels_, y, model)
     print('Score: {}'.format(score_red))
 
     generate_bunch(groups)
 
-    if not HEADLESS: plt.show()
+    if not HEADLESS:
+        plt.show()

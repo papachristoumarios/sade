@@ -5,6 +5,7 @@ import networkx as nx
 import gensim
 import numpy as np
 
+
 def cmd(_cmd):
     # Get output of command
     l = subprocess.check_output(_cmd, shell=True)
@@ -12,7 +13,9 @@ def cmd(_cmd):
     l = list(filter(lambda z: z.rstrip() != '', l))
     return l
 
+
 def basename(x, depth=1): return x.split('/')[-depth]
+
 
 def list_files(input_dir, suffix, recursive=True):
     if recursive:
@@ -26,6 +29,8 @@ def list_files(input_dir, suffix, recursive=True):
     return result
 
 # Load data from doc2vec model
+
+
 def load_data(embeddings_filename='embeddings.bin'):
     model = gensim.models.Doc2Vec.load(embeddings_filename)
     y = list(model.docvecs.doctags)
@@ -37,18 +42,22 @@ def load_data(embeddings_filename='embeddings.bin'):
     return X, y, model
 
 # Generate .bunch files
+
+
 def generate_bunch(partition, outfile=None):
     result = ''
     for key, val in partition.items():
-        result = result + '{} = {}\n'.format(str(key), ', '.join(map(str, val)))
+        result = result + \
+            '{} = {}\n'.format(str(key), ', '.join(map(str, val)))
 
-    if outfile == None:
+    if outfile is None:
         print(result)
     else:
         with open(outfile, 'w+') as f:
             f.write(result)
 
     return result
+
 
 def contract_graph(G, contraction_mapping):
     if isinstance(G, nx.Graph):
@@ -58,8 +67,11 @@ def contract_graph(G, contraction_mapping):
 
     for (u, v) in G.edges():
         try:
-            H.add_edge(contraction_mapping[u], contraction_mapping[v], weight=1)
-        except:
+            H.add_edge(
+                contraction_mapping[u],
+                contraction_mapping[v],
+                weight=1)
+        except BaseException:
             pass
 
     return H
