@@ -5,14 +5,20 @@
 # Imports
 import numpy as np
 from scipy import ndimage
-from matplotlib import pyplot as plt
+import os
+if not os.environ.get('DISPLAY') == None:
+    HEADLESS = False
+    from matplotlib import pyplot as plt
+else:
+    HEADLESS = True
+
 from sklearn import manifold
 import gensim
 import gensim.models
 from sklearn.cluster import AgglomerativeClustering
 import collections
 import argparse
-from sade.helpers import load_data
+from sade.helpers import load_data, generate_bunch
 
 np.random.seed(0)
 
@@ -56,10 +62,11 @@ def compute_score(X, labels, y, model):
                 c = get_corr_coeff(u, v)
                 correlations[g] = min(c, correlations[g])
 
-    print(correlations)
+    for key, val in groups.items():
+        groups[key] = [elem[0] for elem in val]
 
 
-    return min(correlations.values())
+    return groups, min(correlations.values())
 
 
 if __name__ == '__main__':
@@ -86,9 +93,11 @@ if __name__ == '__main__':
     clustering = AgglomerativeClustering(linkage=linkage, n_clusters=args.n)
     clustering.fit(X)
     print('Linkage: {}'.format(linkage))
-    if args.d in [1, 2, 3]:
+    if args.d in [1, 2, 3] and not HEADLESS:
         plot_clustering(X, clustering.labels_, "Linkage: {}".format(linkage).title())
-    score_red = compute_score(X, clustering.labels_, y, model)
+    groups, score_red = compute_score(X, clustering.labels_, y, model)
     print('Score: {}'.format(score_red))
 
-    plt.show()
+    generate_bunch(groups)
+
+    if not HEADLESS: plt.show()
