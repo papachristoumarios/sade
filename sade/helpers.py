@@ -2,6 +2,8 @@ import subprocess
 import os
 import sys
 import networkx as nx
+import gensim
+import numpy as np
 
 def cmd(_cmd):
     # Get output of command
