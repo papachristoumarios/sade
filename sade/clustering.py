@@ -92,6 +92,12 @@ if __name__ == '__main__':
         type=int,
         help='Number of clusters',
         default=10)
+
+    argparser.add_argument(
+        '--stats',
+        action='store_true',
+        help='Print statistics on clusterings'
+    )
     argparser.add_argument('-l', type=str, help='Linkage Type', default='ward')
 
     args = argparser.parse_args()
@@ -108,16 +114,21 @@ if __name__ == '__main__':
     # Compute clustering with sklearn
     clustering = AgglomerativeClustering(linkage=linkage, n_clusters=args.n)
     clustering.fit(X)
-    print('Linkage: {}'.format(linkage))
     if args.d in [1, 2, 3] and not HEADLESS:
         plot_clustering(
             X,
             clustering.labels_,
             "Linkage: {}".format(linkage).title())
     groups, score_red = compute_score(X, clustering.labels_, y, model)
-    print('Score: {}'.format(score_red))
-
     generate_bunch(groups)
+
+    if args.stats:
+        print('Linkage: {}'.format(linkage))
+        print('Score: {}'.format(score_red))
+        print('Largest cluster size: ', max([len(z) for z in groups.values()]))
+        print('Smallest cluster size: ', min([len(z) for z in groups.values()]))
+        print('Mean cluster size: ', len(X) / args.n )
+        print('Total modules', len(X))
 
     if not HEADLESS:
         plt.show()
