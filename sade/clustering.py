@@ -100,6 +100,13 @@ if __name__ == '__main__':
     )
     argparser.add_argument('-l', type=str, help='Linkage Type', default='ward')
 
+    argparser.add_argument(
+        '--affinity',
+        type=str,
+        default='euclidean',
+        help='Affinity of linkage'
+    )
+
     args = argparser.parse_args()
 
     X, y, model = load_data(args.e)
@@ -112,7 +119,7 @@ if __name__ == '__main__':
     linkage = args.l
 
     # Compute clustering with sklearn
-    clustering = AgglomerativeClustering(linkage=linkage, n_clusters=args.n)
+    clustering = AgglomerativeClustering(linkage=linkage, n_clusters=args.n, affinity=args.affinity)
     clustering.fit(X)
     if args.d in [1, 2, 3] and not HEADLESS:
         plot_clustering(
