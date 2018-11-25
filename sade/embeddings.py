@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Source Code Document Embeddings Module
-
+import wordninja
 import functools
 import os
 import re
@@ -212,7 +212,8 @@ def pipelined_removals(
         pipeline=[
             expand,
             split_underscores,
-            camel_case_split],
+            camel_case_split,
+	    wordninja.split],
         cleaner=remove_nonalpha):
     result = pipeline[0](s)
     for component in pipeline[1:]:
