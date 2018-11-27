@@ -86,6 +86,16 @@ A `params.json` file example:
 
 
 
+#### Pretrained Models
+
+For the purposes of our research we have trained the document embeddings for the Linux Kernel Codebase v4.21. From here you can download the embeddings produced with `gensim`.  
+
+1. [Document Embeddings (Module Level without Probabilistic Split)](https://pithos.okeanos.grnet.gr/public/MjvTbBkLWC6tSlTmK1yiq3)
+2. [Document Embeddings (Module Level with Probabilstic Split)](https://pithos.okeanos.grnet.gr/public/TAEsZW4IJZgrN9aanI11a7)
+3. [Document Embeddings (Source Code File Level)](https://pithos.okeanos.grnet.gr/public/3cEM9HxM7KG7AEdlkKvcA4)
+
+
+
 ### Step 3: Generating the Call Graph through CScout
 
 Generate the `make.cs` file via:
