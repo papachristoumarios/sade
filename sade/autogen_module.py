@@ -21,8 +21,8 @@ def gen_module_dict(depth=-1, inverse=False, suffix=['.c', '.h']):
         modules = {}
 
     for name in filelist:
-        head, tail = sade.helpers.basename(
-            name, depth=depth), sade.helpers.basename(name)
+        splitted = os.path.split(name)
+        head, tail = sade.helpers.basename(splitted[depth-1]), splitted[-1]
         # module maps to files
         if inverse:
             modules[head].append(tail)
