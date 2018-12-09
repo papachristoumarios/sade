@@ -1,7 +1,9 @@
-# Simple community detection cli tool
-# Supports directed graphs using bipartite network transformation
-# Usage: simple_community_detection.py -h
-# Author: Marios Papachristou
+'''
+    Simple community detection cli tool
+    Supports directed graphs using bipartite network transformation
+    Usage: simple_community_detection.py -h
+    Author: Marios Papachristou
+'''
 
 import community
 import networkx as nx
@@ -24,6 +26,9 @@ def get_communities(partition):
 
 
 def community_statistics(communities):
+    '''
+        Print simple community statistics
+    '''
     counts = []
     for key, val in communities.items():
         counts.append(len(val))
@@ -35,8 +40,51 @@ def community_statistics(communities):
     print('Standard Deviation (non-biased): ', np.std(counts))
 
 
+def get_partition(communities):
+    partition = {}
+    for key, val in communities.items():
+        for m in val:
+            partition[m] = key
+
+    return partition
+
+
+def relabel(communities, partition):
+    '''
+        Relabel communities and partition
+        in case the physical order is disturbed,
+        e.g. after bipartite transformation
+    '''
+    new_communities = {}
+    new_partition = {}
+
+    keys = sorted(list(communities.keys()))
+    key_map = {}
+    for i, k in enumerate(keys):
+        key_map[k] = i
+
+    for key, val in partition.items():
+        new_partition[key] = key_map[val]
+
+    for key, val in communities.items():
+        new_communities[key_map[key]] = val
+
+    return new_communities, new_partition
+
+
 def best_partition_bipartite(G):
+    '''
+        Implementation of bipartite transformation for
+        a directed graph G for applying community detection.
+        1. The nodes of the graph are first duplicates
+        2. For each directed call u->v an edge {u, v'} is added
+        to the bipartite network H
+        3. Community detection is applied on undirected H
+        4. Union-Find is applied onto the resulting communities
+        to cluster the same communities together
+    '''
     def _union(u, v):
+        ''' Union-Find '''
         w = parent[u]
         while parent[w] != w:
             w = parent[w]
@@ -82,7 +130,8 @@ def best_partition_bipartite(G):
     for key, val in communities.items():
         communities[key] = list(val)
 
-    return communities
+
+    return relabel(communities, partition)
 
 
 if __name__ == '__main__':
@@ -127,7 +176,7 @@ if __name__ == '__main__':
         G = sade.helpers.contract_graph(G, contraction)
 
     if args.directed:
-        communities = best_partition_bipartite(G)
+        communities, partition = best_partition_bipartite(G)
     else:
         partition = community.best_partition(G)
         communities = get_communities(partition)
