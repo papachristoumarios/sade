@@ -1,26 +1,36 @@
-cor_coeff# Hierarchical Clustering for Document Embeddings
-# usage: python3 clustering.py -h
-# Author: Marios Papachristou
+"""Hierarchical Clustering for Document Embeddings
+usage: python3 clustering.py -h
+Author: Marios Papachristou"""
 
 # Imports
-import numpy as np
-import networkx as nx
+import os
 import pprint
-from scipy import ndimage
-from matplotlib import pyplot as plt
-from sklearn import manifold
-import gensim
-import sade.mdst
-import community
-import gensim.models
-from sklearn.cluster import AgglomerativeClustering
+import json
 import collections
 import argparse
+import numpy as np
+import networkx as nx
+from matplotlib import pyplot as plt
+from sklearn import manifold
+import gensim.models
+import gensim
+import community
+import sade.simple_community_detection
+import sade.mdst
 
 np.random.seed(0)
 
 # Compute cosine similarity
-def cor_coeff(u, v, normalize=True, decreasing=False):
+def corr_coeff(u, v, normalize=True, decreasing=False):
+    '''
+        Compute correlation coefficients. The correlation
+        coefficients are defined as the cosines of the angle_similarity
+        between two vectors u, v in the d-dimensional space.
+        There is an option for normalization, normalizing the
+        angle to [0, 1]. An decreasing function can also be obtained
+        via computing
+                (1 - rho) / 2
+    '''
     rho =  np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
     if normalize:
         if decreasing:
@@ -30,17 +40,23 @@ def cor_coeff(u, v, normalize=True, decreasing=False):
     else:
         return rho
 
+
 def angle_similarity(u, v):
-    rho = cor_coeff(u, v, normalize=False)
+    '''
+        Computes anglular similarity between two vectors u, v.
+        Angular similarity is a metric defined as
+            AS(u, v) = 1 - acos(rho) / pi
+    '''
+    rho = corr_coeff(u, v, normalize=False)
     return 1 - np.arccos(rho) / np.pi
-
-def p_norm(u, v, p):
-    return np.linalg.norm(u - v, order=p)
-
 
 
 # Load data from doc2vec model
 def load_data(embeddings_filename='embeddings.bin'):
+    '''
+        Loads data from Dov2Vec model with gensim.models
+        Returns an array of document vectors and the doctags
+    '''
     model = gensim.models.Doc2Vec.load(embeddings_filename)
     y = list(model.docvecs.doctags)
     X = []
@@ -51,14 +67,16 @@ def load_data(embeddings_filename='embeddings.bin'):
     return X, y, model
 
 # Plot clustering
-def plot_clustering(X_red, labels, title=None):
+def plot_clustering(X_red, y, labels, title=None):
+    '''
+        Plot a clustering with matplotlib
+    '''
     x_min, x_max = np.min(X_red, axis=0), np.max(X_red, axis=0)
     X_red = (X_red - x_min) / (x_max - x_min)
 
     plt.figure(figsize=(6, 4))
     for i in range(X_red.shape[0]):
         plt.text(X_red[i, 0], X_red[i, 1], str(y[i]),
-                 color=plt.cm.nipy_spectral(labels[i] / 10.),
                  fontdict={'weight': 'bold', 'size': 9})
 
     plt.xticks([])
@@ -68,8 +86,12 @@ def plot_clustering(X_red, labels, title=None):
     plt.axis('off')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-# Compute Minimum Correlation in Clusters
+
 def compute_score(X, labels, y, model):
+    '''
+        Compute the component with the minimum corellation
+        in each cluster for a clustering (X, y, labels)
+    '''
     groups = collections.defaultdict(list)
 
     for i, label in enumerate(labels):
@@ -82,7 +104,7 @@ def compute_score(X, labels, y, model):
             u = X[i]
             for j, yj in groups[g]:
                 v = X[j]
-                c = cor_coeff(u, v)
+                c = corr_coeff(u, v)
                 correlations[g] = min(c, correlations[g])
 
     print(correlations)
@@ -90,8 +112,17 @@ def compute_score(X, labels, y, model):
 
     return min(correlations.values())
 
-def generate_graph(call_graph_file, model):
-
+def generate_graph(call_graph_file, model, modules):
+    '''
+        Generates nx.Dirgraph using networkx, the call
+        graph file, a doc2vec model and the module definition
+        Arguments:
+            call_graph_file : call_graph_file in u v format
+            (denoting a call u -> v)
+            model : gensim doc2vec model
+            modules : a dictionary with the modules of each file
+            (can also be identity mapping for fine-grained clustering)
+    '''
     G = nx.DiGraph()
 
     with open(call_graph_file, 'r') as f:
@@ -99,18 +130,21 @@ def generate_graph(call_graph_file, model):
 
     for line in lines:
         u, v = line.split()
-        try:
-            vu, vv = model.docvecs[u], model.docvecs[v]
-            rho = cor_coeff(vu, vv)
+        if modules != None:
+            u, v = modules[u], modules[v]
+        vu, vv = model.docvecs[u], model.docvecs[v]
+        rho = corr_coeff(vu, vv)
 
-            G.add_edge(u, v, weight=rho)
+        G.add_edge(u, v, weight=rho, label=str(round(rho, 3)))
 
-        except:
-            pass
 
     return G
 
 def get_communities(partition):
+    '''
+        Get communities given a partition from the community
+        package. The partition contains
+    '''
     communities = collections.defaultdict(list)
 
     for u, v in partition.items():
@@ -119,6 +153,13 @@ def get_communities(partition):
     return communities
 
 def get_mean_embeddings(communities, model=None):
+    '''
+        Copmute neural bag of docs (mean embedding)
+        for a document
+        Arguments
+            communities : a vocabulary containing the
+            communities - clusters
+    '''
     embeddings = {}
 
     for idx, files in communities.items():
@@ -126,7 +167,16 @@ def get_mean_embeddings(communities, model=None):
 
     return embeddings
 
-def construct_induced_graph(embeddings, partition, G, directed=True):
+def construct_induced_graph(embeddings, partition, communities, G, directed=True):
+    '''
+        Construct the induced graph after clustering.
+        Arguments
+            embeddings: The mean_embeddings dictionary generated by
+            get_mean_embeddings
+            G : Call graph as nx.DiGraph
+            partition: A partition of the graph G
+            communities: Communities of G
+    '''
     if directed:
         H = nx.DiGraph()
     else:
@@ -135,47 +185,79 @@ def construct_induced_graph(embeddings, partition, G, directed=True):
     # Construct non-weighted H
     for u, v in G.edges():
         pu, pv = partition[u], partition[v]
-        if pu == pv:
-            continue
         H.add_edge(pu, pv)
 
     for (u, v, w) in H.edges(data=True):
         # Compute rho
         uu, vv = embeddings[u][1], embeddings[v][1]
 
-        rho = cor_coeff(uu, vv)
+        rho = corr_coeff(uu, vv, decreasing=True)
 
+        # Assign weights and labels
         w['weight'] = rho
+        w['label'] = str(rho)
 
-    print(H.edges(data=True))
+    H = nx.relabel_nodes(H, dict([(n, ', '.join(v)) for n, v in communities.items()]))
+
     return H
 
-def detect_communities(embeddings_filename, dimensions, call_graph_file):
-        X, y, model = load_data(embeddings_filename)
-        n_samples, n_features = X.shape
+def detect_communities(embeddings_filename, dimensions, call_graph_file, modules_json, visualize, directed):
+    '''
+        Apply Louvain community detection on the call graph
+        Arguments:
+            embeddings_filename: Filename of document embeddings
+            dimensions: Dimensions for reduction
+            call_graph_file: Call graph file
+            modules_json: JSON containing module definition
+            visualize: Plot the resulting graph with GraphViz
+            directed: Assume edge directionality. In the current
+            implementation bipartite transformation of the network
+            is used in order to generate communities.
+    '''
+    X, y, model = load_data(embeddings_filename)
+    n_samples, n_features = X.shape
 
-        # Reduce dimensions
-        if dimensions != -1:
-            X = manifold.SpectralEmbedding(n_components=dimensions).fit_transform(X)
-            for doctag, vec in zip(model.docvecs.doctags, X):
-                model.docvecs[doctag] = vec
+    modules = json.loads(open(modules_json, 'r').read())
 
-        G = generate_graph(call_graph_file, model)
+    # Reduce dimensions
+    if dimensions != -1:
+        X = manifold.SpectralEmbedding(n_components=dimensions).fit_transform(X)
+        for doctag, vec in zip(model.docvecs.doctags, X):
+            model.docvecs[doctag] = vec
 
+    G = generate_graph(call_graph_file, model, modules)
+
+    if visualize:
+        nx.nx_pydot.write_dot(G, '{}_weights.dot'.format(os.path.splitext(call_graph_file)[0]))
+
+
+    if not directed:
         partition = community.best_partition(nx.Graph(G))
         communities = get_communities(partition)
-        embeddings = get_mean_embeddings(communities, model)
+    else:
+        communities, partition = sade.simple_community_detection.best_partition_bipartite(G)
 
-        pprint.pprint(communities)
+    mean_embeddings = get_mean_embeddings(communities, model)
 
-        return partition, communities, embeddings, G, model
+    pprint.pprint(communities)
+
+    H = construct_induced_graph(mean_embeddings, partition, communities, G, directed)
+
+    if visualize:
+        nx.nx_pydot.write_dot(H, '{}_weights_communities.dot'.format(os.path.splitext(call_graph_file)[0]))
+
+    return partition, communities, mean_embeddings, G, model
 
 def detect_communities_helper(G, model):
-        partition = community.best_partition(nx.Graph(G))
-        communities = get_communities(partition)
-        embeddings = get_mean_embeddings(communities, model)
-        pprint.pprint(communities)
-        return partition, communities, embeddings
+    '''
+        Helper function for CLI tool
+    '''
+    partition = community.best_partition(nx.Graph(G))
+    communities = get_communities(partition)
+    embeddings = get_mean_embeddings(communities, model)
+    pprint.pprint(communities)
+
+    return partition, communities, embeddings
 
 
 if __name__ == '__main__':
@@ -185,7 +267,15 @@ if __name__ == '__main__':
     argparser.add_argument('-e', type=str, help='Doc2Vec Embeddings', default='embeddings.bin')
     argparser.add_argument('-g', type=str, help='Call graph file')
     argparser.add_argument('-d', type=int, help='Number of dimensions to reduce Embeddings Space', default=-1)
+    argparser.add_argument('-m', type=str, help='Module definition file', default='')
+    argparser.add_argument('--visualize', action='store_true', help='Generate dot files with GraphViz')
+    argparser.add_argument('--directed', action='store_true', help='Assume edge directionality')
 
     args = argparser.parse_args()
 
-    detect_communities(embeddings_filename=args.e, call_graph_file=args.g, dimensions=args.d)
+    detect_communities(embeddings_filename=args.e,
+        call_graph_file=args.g,
+        dimensions=args.d,
+        modules_json=args.m,
+        visualize=args.visualize,
+        directed=args.directed)
