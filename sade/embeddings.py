@@ -1,6 +1,8 @@
-#!/usr/bin/env python3
-
-# Source Code Document Embeddings Module
+'''
+    Source Code Document Embeddings Module
+    Author: Marios Papachristou
+    Usage: embeddings.py -h
+'''
 import wordninja
 import functools
 import os
@@ -41,21 +43,10 @@ default_params = {
 
 
 def lookup(x):
+    '''
+        Lemmatizer lookup
+    '''
     return LOOKUP.get(x, x)
-
-
-def longest_subsequence_in_vocab(x):
-    n = len(x)
-    ans = ''
-    for j in range(n):
-        for i in range(j):
-            if len(x[i:j]) > len(ans):
-                if x[i:j] in nlp.vocab:
-                    ans = x[i:j]
-    if ans == '':
-        return x
-    else:
-        return ans
 
 
 def get_areas():
@@ -68,6 +59,14 @@ def source_code_document_embeddings(
         params=default_params,
         modules=None,
         outfile='embeddings.bin'):
+    '''
+        Produce document embeddings model with gensims
+        Arguments:
+            extensions: file extensions to take into account
+            params : model parameters
+            module : module file definitions
+            outfile : output binary file
+    '''
     if modules is not None:
         modules = json.loads(open(modules, 'r').read())
 
@@ -90,6 +89,8 @@ def source_code_document_embeddings(
         data_samples=data_samples, stopwords=stopwords)
 
     print('Build dataset')
+
+    # Generate tagged documents
     taggeddocs = []
 
     for filename, sample in zip(files, data_samples):
@@ -118,6 +119,16 @@ def source_code_document_embeddings(
 
 
 def _process(document):
+    '''
+        Document preprocessing function
+        1. Remove first comment
+        2. Tokenize and apply transforms to tokens
+        Transformations include
+        a. identifier segmentation (with unigram)
+        b. cleaning forms (camel case, underscore splits)
+        c. lemmatization with spaCy
+    '''
+
     sample, stopwords_regex = document
 
     # Remove first comment (heuristic for copyright related stuff)
@@ -146,6 +157,14 @@ def _process(document):
 
 
 def preprocess_data_samples(data_samples, stopwords):
+    '''
+        Main preprocessing function that
+        runs _process in parallel for large
+        documents.
+        Arguments:
+            data_samples: Data samples
+            stopwords : list of stopwords
+    '''
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     stopwords_regex = '|'.join(map(re.escape, stopwords))
@@ -159,6 +178,9 @@ def preprocess_data_samples(data_samples, stopwords):
 
 
 def build_stoplist(data_samples, most_common=100):
+    '''
+        Function to build topic-specific stoplists
+    '''
     words = []
     for x in data_samples:
         words.extend(x.split())
@@ -178,6 +200,9 @@ def build_stoplist(data_samples, most_common=100):
 
 
 def camel_case_split(identifier):
+    '''
+        Split on camel-case
+    '''
     matches = re.finditer(
         '.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)',
         identifier)
@@ -185,24 +210,32 @@ def camel_case_split(identifier):
 
 
 def split_underscores(s):
+    '''
+        Split on underscores
+    '''
     return s.split('_')
 
 
 def remove_nonalpha(s):
+    '''
+        Remove non-alpha from string
+    '''
     return ''.join([x for x in s if x.isalpha()])
 
 
-def clean_token(s):
-    s = remove_nonalpha(s)
-    return longest_subsequence_in_vocab(s)
-
-
 def expand(s):
+    '''
+        Expand string on multiple expansion identifiers
+        E.g. void(int) becomes ['void', 'int']
+    '''
     expanders = ['(', ')', '{', '}', '[', ']', '%', '\n']
     return list(filter(lambda x: x != '', multi_split(expanders, s)))
 
 
 def multi_split(delimiters, string, maxsplit=0):
+    '''
+        Split on multiple delimiters
+    '''
     regexPattern = '|'.join(map(re.escape, delimiters))
     return re.split(regexPattern, string, maxsplit)
 
@@ -215,6 +248,10 @@ def pipelined_removals(
             camel_case_split,
 	    wordninja.split],
         cleaner=remove_nonalpha):
+        '''
+            Apply pipelined removals
+        '''
+
     result = pipeline[0](s)
     for component in pipeline[1:]:
         temp = []
