@@ -7,13 +7,13 @@
 curl -X GET "http://localhost:8081/fgraph.txt?gtype=I&all=1" > fgraph_I_all.txt
 
 # Compile-time dep graph
-curl -X GET "http://localhost:8081/fgraph.txt?gtype=C" > fgraph_C.txt
+curl -X GET "http://localhost:8081/fgraph.txt?gtype=C&all=1" > fgraph_C_all.txt
 
 # Control dependency graph (through fcn calls) 
-curl -X GET "http://localhost:8081/fgraph.txt?gtype=F&n=D" > fgraph_F_D.txt
+curl -X GET "http://localhost:8081/fgraph.txt?gtype=F&n=D&all=1" > fgraph_F_D_all.txt
 
 # Data dependency graph (through globals) 
-curl -X GET "http://localhost:8081/fgraph.txt?gtype=G" > fgrahp_G.txt
+curl -X GET "http://localhost:8081/fgraph.txt?gtype=G&all=1" > fgraph_G_all.txt
 
 # Cummulative metrics
 curl -X GET "http://localhost:8081/funmetrics.html" > metrics.txt
