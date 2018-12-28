@@ -1,170 +1,67 @@
-import sys
-import collections
 import networkx as nx
+from collections import defaultdict, namedtuple
 
-def _load(arcs,weights):
-    g = {}
-    for (src,dst) in arcs:
-        if src in g:
-            g[src][dst] = weights[(src,dst)]
-        else:
-            g[src] = { dst : weights[(src,dst)] }
-    return g
+Arc = namedtuple('Arc', ('tail', 'weight', 'head'))
 
-def _reverse(graph):
-    r = {}
-    for src in graph:
-        for (dst,c) in graph[src].items():
-            if dst in r:
-                r[dst][src] = c
-            else:
-                r[dst] = { src : c }
-    return r
+def min_spanning_arborescence(arcs, sink):
+    good_arcs = []
+    quotient_map = {arc.tail: arc.tail for arc in arcs}
+    quotient_map[sink] = sink
+    while True:
+        min_arc_by_tail_rep = {}
+        successor_rep = {}
+        for arc in arcs:
+            if arc.tail == sink:
+                continue
+            tail_rep = quotient_map[arc.tail]
+            head_rep = quotient_map[arc.head]
+            if tail_rep == head_rep:
+                continue
+            if tail_rep not in min_arc_by_tail_rep or min_arc_by_tail_rep[tail_rep].weight > arc.weight:
+                min_arc_by_tail_rep[tail_rep] = arc
+                successor_rep[tail_rep] = head_rep
+        cycle_reps = find_cycle(successor_rep, sink)
+        if cycle_reps is None:
+            good_arcs.extend(min_arc_by_tail_rep.values())
+            return spanning_arborescence(good_arcs, sink)
+        good_arcs.extend(min_arc_by_tail_rep[cycle_rep] for cycle_rep in cycle_reps)
+        cycle_rep_set = set(cycle_reps)
+        cycle_rep = cycle_rep_set.pop()
+        quotient_map = {node: cycle_rep if node_rep in cycle_rep_set else node_rep for node, node_rep in quotient_map.items()}
 
-def _getCycle(n, g, visited=None, cycle=None):
-    if visited is None:
-        visited = set()
-    if cycle is None:
+
+def find_cycle(successor, sink):
+    visited = {sink}
+    for node in successor:
         cycle = []
-    visited.add(n)
-    cycle += [n]
-    if n not in g:
-        return cycle
-    for e in g[n]:
-        if e not in visited:
-            cycle = _getCycle(e,g,visited,cycle)
-    return cycle
-
-def _mergeCycles(cycle,G,RG,g,rg):
-    allInEdges = []
-    minInternal = None
-    minInternalWeight = sys.maxsize
-
-    # find minimal internal edge weight
-    for n in cycle:
-        for e in RG[n]:
-            if e in cycle:
-                if minInternal is None or RG[n][e] < minInternalWeight:
-                    minInternal = (n,e)
-                    minInternalWeight = RG[n][e]
-                    continue
-            else:
-                allInEdges.append((n,e))
-
-    # find the incoming edge with minimum modified cost
-    minExternal = None
-    minModifiedWeight = 0
-    for s,t in allInEdges:
-        u,v = rg[s].popitem()
-        rg[s][u] = v
-        w = RG[s][t] - (v - minInternalWeight)
-        if minExternal is None or minModifiedWeight > w:
-            minExternal = (s,t)
-            minModifiedWeight = w
-
-    u,w = rg[minExternal[0]].popitem()
-    rem = (minExternal[0],u)
-    rg[minExternal[0]].clear()
-    if minExternal[1] in rg:
-        rg[minExternal[1]][minExternal[0]] = w
-    else:
-        rg[minExternal[1]] = { minExternal[0] : w }
-    if rem[1] in g:
-        if rem[0] in g[rem[1]]:
-            del g[rem[1]][rem[0]]
-    if minExternal[1] in g:
-        g[minExternal[1]][minExternal[0]] = w
-    else:
-        g[minExternal[1]] = { minExternal[0] : w }
+        while node not in visited:
+            visited.add(node)
+            cycle.append(node)
+            node = successor[node]
+        if node in cycle:
+            return cycle[cycle.index(node):]
+    return None
 
 
-def mst(root,G):
-    """ The Chu-Lui/Edmond's algorithm
-
-    arguments:
-
-    root - the root of the MST
-    G - the graph in which the MST lies
-
-    returns: a graph representation of the MST
-
-    Graph representation is the same as the one found at:
-    http://code.activestate.com/recipes/119466/
-
-    Explanation is copied verbatim here:
-
-    The input graph G is assumed to have the following
-    representation: A vertex can be any object that can
-    be used as an index into a dictionary.  G is a
-    dictionary, indexed by vertices.  For any vertex v,
-    G[v] is itself a dictionary, indexed by the neighbors
-    of v.  For any edge v->w, G[v][w] is the length of
-    the edge.  This is related to the representation in
-    <http://www.python.org/doc/essays/graphs.html>
-    where Guido van Rossum suggests representing graphs
-    as dictionaries mapping vertices to lists of neighbors,
-    however dictionaries of edges have many advantages
-    over lists: they can store extra information (here,
-    the lengths), they support fast existence tests,
-    and they allow easy modification of the graph by edge
-    insertion and removal.  Such modifications are not
-    needed here but are important in other graph algorithms.
-    Since dictionaries obey iterator protocol, a graph
-    represented as described here could be handed without
-    modification to an algorithm using Guido's representation.
-
-    Of course, G and G[v] need not be Python dict objects;
-    they can be any other object that obeys dict protocol,
-    for instance a wrapper in which vertices are URLs
-    and a call to G[v] loads the web page and finds its links.
-    """
-    G = _convert(G)
-    RG = _reverse(G)
-    if root in RG:
-        RG[root] = {}
-    g = {}
-    for n in RG:
-        if len(RG[n]) == 0:
+def spanning_arborescence(arcs, sink):
+    arcs_by_head = defaultdict(list)
+    for arc in arcs:
+        if arc.tail == sink:
             continue
-        minimum = sys.maxsize
-        s,d = None,None
-        for e in RG[n]:
-            if RG[n][e] < minimum:
-                minimum = RG[n][e]
-                s,d = n,e
-        if d in g:
-            g[d][s] = RG[s][d]
-        else:
-            g[d] = { s : RG[s][d] }
-
-    cycles = []
-    visited = set()
-    for n in g:
-        if n not in visited:
-            cycle = _getCycle(n,g,visited)
-            cycles.append(cycle)
-
-    rg = _reverse(g)
-    for cycle in cycles:
-        if root in cycle:
+        arcs_by_head[arc.head].append(arc)
+    solution_arc_by_tail = {}
+    stack = arcs_by_head[sink]
+    while stack:
+        arc = stack.pop()
+        if arc.tail in solution_arc_by_tail:
             continue
-        _mergeCycles(cycle, G, RG, g, rg)
+        solution_arc_by_tail[arc.tail] = arc
+        stack.extend(arcs_by_head[arc.tail])
+    return solution_arc_by_tail
 
-    return _convert_back(g)
-
-def _convert(G):
-    g = collections.defaultdict(dict)
-
+def mst(G, s):
+    g = []
     for (u, v, w) in G.edges(data=True):
-        g[u][v] = w['weight']
-    return g
-
-
-def _convert_back(g):
-    G = nx.DiGraph()
-
-    for u in g:
-        for v in g[u]:
-            G.add_edge(u, v, weight=g[u][v])
-
-    return G
+        g.append(Arc(v, w['weight'], u))
+    MDST = min_spanning_arborescence(g, s)
+    print(MDST)
