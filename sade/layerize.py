@@ -35,9 +35,9 @@ def bfs(G, s):
 
     return depth, level
 
-def layerize_mdst(embeddings_filename, dimensions, call_graph_file, modules_json):
+def layerize_mdst(embeddings_filename, dimensions, call_graph_file, modules_json, directed, visualize):
         partition, communities, embeddings, G, model, H = sade.community_detection.detect_communities(
-            embeddings_filename=embeddings_filename, modules_json=modules_json, call_graph_file=call_graph_file, dimensions=dimensions)
+            embeddings_filename=embeddings_filename, modules_json=modules_json, call_graph_file=call_graph_file, dimensions=dimensions, directed=directed, visualize=visualize)
 
         MDST = sade.mdst.mst(0, H)
 
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     if args.type == 'iterative':
         layers = layerize_iterative(embeddings_filename=args.e, dimensions=args.d, call_graph_file=args.g)
     elif args.type == 'mdst':
-        layers = layerize_mdst(embeddings_filename=args.e, modules_json=args.m, dimensions=args.d, call_graph_file=args.g)
+        layers = layerize_mdst(embeddings_filename=args.e, modules_json=args.m, dimensions=args.d, call_graph_file=args.g, directed=args.directed, visualize=args.visualize)
 
     if args.export == 'json':
         print(json.dumps(layers, indent=4, separators=(',', ': ')))
