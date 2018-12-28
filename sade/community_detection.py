@@ -238,7 +238,8 @@ def detect_communities(embeddings_filename, dimensions, call_graph_file, modules
 
     mean_embeddings = get_mean_embeddings(communities, model)
 
-    pprint.pprint(communities)
+    # TODO add json support
+    print(sade.helpers.generate_bunch(communities))
 
     H = construct_induced_graph(mean_embeddings, partition, communities, G, directed)
 

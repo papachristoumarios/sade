@@ -128,7 +128,7 @@ if __name__ == '__main__':
             clustering.labels_,
             "Linkage: {}".format(linkage).title())
     groups, score_red = compute_score(X, clustering.labels_, y, model)
-    generate_bunch(groups)
+    print(generate_bunch(groups))
 
     if args.stats:
         print('Linkage: {}'.format(linkage))

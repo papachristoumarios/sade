@@ -58,16 +58,19 @@ def relabel(communities, partition):
     new_communities = {}
     new_partition = {}
 
-    keys = sorted(list(communities.keys()))
+    
+    keys = set(communities.keys())
     key_map = {}
     for i, k in enumerate(keys):
         key_map[k] = i
 
-    for key, val in partition.items():
-        new_partition[key] = key_map[val]
 
     for key, val in communities.items():
         new_communities[key_map[key]] = val
+
+    for key, val in new_communities.items():
+        for v in val:
+            new_partition[v] = key
 
     return new_communities, new_partition
 

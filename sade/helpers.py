@@ -44,15 +44,16 @@ def load_data(embeddings_filename='embeddings.bin'):
 # Generate .bunch files
 
 
-def generate_bunch(partition, outfile=None):
-    result = ''
+def generate_bunch(partition, outfile=None, enumerable=False):
+    result = []
+    i = 0
     for key, val in partition.items():
-        result = result + \
-            '{} = {}\n'.format(str(key), ', '.join(map(str, val)))
+        result.append('{}= {}\n'.format(str(key) if not enumerable else i, ', '.join(map(str, val))))
+        i += 1
 
-    if outfile is None:
-        print(result)
-    else:
+    result = '\n'.join(result)
+
+    if outfile != None:
         with open(outfile, 'w+') as f:
             f.write(result)
 
