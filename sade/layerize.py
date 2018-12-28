@@ -1,14 +1,17 @@
-import numpy as np
-import networkx as nx
+# Layerization Module
+# Author: Marios Papachristou
 import sys
 import pprint
 import argparse
 import collections
 import pickle
+import numpy as np
+import networkx as nx
 import multiprocessing
 import sade.community_detection
 import sade.mdst
 import sade.helpers
+
 
 def bfs(G, s):
     depth = {}
@@ -32,16 +35,11 @@ def bfs(G, s):
 
     return depth, level
 
-def layerize_mdst(embeddings_filename, dimensions, call_graph_file):
-        partition, communities, embeddings, G, model = sade.community_detection.detect_communities(
-            embeddings_filename=embeddings_filename, call_graph_file=call_graph_file, dimensions=dimensions)
-
-        H = sade.community_detection.construct_induced_graph(
-            embeddings, partition, G, directed=False)
+def layerize_mdst(embeddings_filename, dimensions, call_graph_file, modules_json):
+        partition, communities, embeddings, G, model, H = sade.community_detection.detect_communities(
+            embeddings_filename=embeddings_filename, modules_json=modules_json, call_graph_file=call_graph_file, dimensions=dimensions)
 
         MDST = sade.mdst.mst(0, H)
-
-        print(MDST)
 
         depth, level = bfs(MDST, 0)
 
@@ -107,14 +105,18 @@ if __name__ == '__main__':
         default=-1)
     argparser.add_argument('--type', type=str, help='Type of layerization', default='mdst')
     argparser.add_argument('--export', type=str, help='Export Type (json or bunch)', default='bunch')
+    argparser.add_argument('--visualize', action='store_true', help='Generate dot files with GraphViz')
+    argparser.add_argument('--directed', action='store_true', help='Assume edge directionality')
+    argparser.add_argument('-m', type=str, help='Module definition file', default='')
+
     args = argparser.parse_args()
 
     if args.type == 'iterative':
         layers = layerize_iterative(embeddings_filename=args.e, dimensions=args.d, call_graph_file=args.g)
     elif args.type == 'mdst':
-        layers = layerize_mdst(embeddings_filename=args.e, dimensions=args.d, call_graph_file=args.g)
+        layers = layerize_mdst(embeddings_filename=args.e, modules_json=args.m, dimensions=args.d, call_graph_file=args.g)
 
     if args.export == 'json':
         print(json.dumps(layers, indent=4, separators=(',', ': ')))
     elif args.export == 'bunch':
-        print(sade.helpers.generate_bunch(layers))    
+        print(sade.helpers.generate_bunch(layers))

@@ -10,7 +10,6 @@ import collections
 import argparse
 import numpy as np
 import networkx as nx
-from matplotlib import pyplot as plt
 from sklearn import manifold
 import gensim.models
 import gensim
@@ -246,7 +245,7 @@ def detect_communities(embeddings_filename, dimensions, call_graph_file, modules
     if visualize:
         nx.nx_pydot.write_dot(H, '{}_weights_communities.dot'.format(os.path.splitext(call_graph_file)[0]))
 
-    return partition, communities, mean_embeddings, G, model
+    return partition, communities, mean_embeddings, G, model, H
 
 def detect_communities_helper(G, model):
     '''
