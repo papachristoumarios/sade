@@ -1,0 +1,57 @@
+NCLUSTERS=21
+EMBEDDINGS=embeddings_one_top_wordninja.bin
+LINKAGES=complete average
+CLUSTERINGS=$(LINKAGES) ward sade sade_directed
+SADE_ROOT=/home/marios/sade
+MODULES=modules_one_top.json
+CALL_GRAPH=/home/marios/sade/scripts/linux-4.21-call-graphs/fgraph_F_D.txt
+GROUND=ground1.bunch
+JOBS=7
+MOJO_FLAGS=
+COMMITS := $(shell ./sample_git.sh 100 4)
+CGRAPH=fgraph.txt\?gtype\=F\&n\=D\&all\=1
+
+extremity:
+	$(foreach var,$(LINKAGES), clustering.py -l $(var) -e $(EMBEDDINGS) -n $(NCLUSTERS) --stats --affinity cosine >${var}.stats;)
+	clustering.py -l ward -e $(EMBEDDINGS) -n $(NCLUSTERS) --stats >ward.stats
+
+agglomerative_clusterings: 
+	$(foreach var,$(LINKAGES), clustering.py -l $(var) -e $(EMBEDDINGS) -n $(NCLUSTERS) --affinity cosine>${var}.bunch)
+	clustering.py -l ward -e $(EMBEDDINGS) -n $(NCLUSTERS) >ward.bunch
+
+sade_clusterings:
+	community_detection.py -e $(EMBEDDINGS) -m $(MODULES) -g $(CALL_GRAPH) >sade.bunch
+	community_detection.py -e $(EMBEDDINGS) -m $(MODULES) -g $(CALL_GRAPH) --directed >sade_directed.bunch
+
+clusterings: agglomerative_clusterings sade_clusterings
+
+mojo_distances:
+	@echo "MoJO Distances" 
+	@$(foreach var, $(CLUSTERINGS), printf "$(var) " && java MoJo $(var).bunch $(GROUND) $(MOJO_FLAGS);)
+
+embeddings_stability:
+	@echo "Generating embeddings"
+	$(foreach hash,$(COMMITS), git checkout $(hash) && \
+		echo "Commit $(hash)" && \
+		autogen_module.py -d -1 --suffix .c --suffix .h >modules_one_top_$(hash).json && \
+		embeddings.py -d . -m modules_one_top_$(hash).json -p params.json -o embeddings_$(hash).bin;)
+	git checkout HEAD
+
+call_graphs_stability:
+	@echo "Generating call graphs"
+	$(foreach hash,$(COMMITS), git checkout $(hash) && \
+		echo "Generating call graph for $(hash)" && \
+		$(MAKE) clean -f Makefile.linux && \
+		$(MAKE) defconfing -f Makefile.linux && \
+		csmake  -j$(JOBS) && \
+		cscout -R $(CGRAPH) make.cs && \
+		mv fgraph.txt fgraph_$(hash).txt;)
+
+stability:
+	@echo "Stability Test"
+	$(foreach hash, $(COMMITS), community_detection.py -e embeddings_$(hash).bin -m modules_one_top_$(hash).json -g fgraph_$(hash).txt >sade_$(hash).bunch && \
+		community_detection.py -e embeddings_$(hash).bin -m modules_one_top_$(hash).json -g fgraph_$(hash).txt >sade_$(hash).bunch;)
+
+mojo_distances_stability:
+	@echo "MoJO Distances"
+	compare_distances.py $(COMMITS)
