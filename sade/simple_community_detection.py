@@ -58,7 +58,7 @@ def relabel(communities, partition):
     new_communities = {}
     new_partition = {}
 
-    
+
     keys = set(communities.keys())
     key_map = {}
     for i, k in enumerate(keys):
@@ -86,12 +86,22 @@ def best_partition_bipartite(G):
         4. Union-Find is applied onto the resulting communities
         to cluster the same communities together
     '''
+    def _find(u):
+        ''' Find with path compression '''
+        if parent[i] != i:
+            parent[i] = _find(parent[i])
+        return parent[i];
+
     def _union(u, v):
-        ''' Union-Find '''
-        w = parent[u]
-        while parent[w] != w:
-            w = parent[w]
-        parent[v] = w
+        ''' Union by rank '''
+        p1 = _find(u)
+        p2 = _find(v)
+
+        if rank[p1] < rank[p2]:
+            p1, p2 = p2, p1
+        parent[p2] = p1
+        if rank[p1] == rank[p2]:
+            rank[p1] += 1;
 
     # H is a bipartite network
     H = nx.Graph()
@@ -115,9 +125,11 @@ def best_partition_bipartite(G):
     communities = collections.defaultdict(set)
 
     parent = {}
+    rank = {}
 
     for val in partition.values():
         parent[val] = val
+        rank[val] = 0
 
     # Union-find to join communities with common x and hash(x)
     for u in G.nodes():
