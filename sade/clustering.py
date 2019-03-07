@@ -1,7 +1,8 @@
-# Hierarchical Clustering for Document Embeddings
-# usage: python3 clustering.py -h
-# Author: Marios Papachristou
-
+"""
+    Hierarchical Clustering for Document Embeddings
+    usage: python3 clustering.py -h
+    Author: Marios Papachristou
+"""
 
 # Imports
 import numpy as np
