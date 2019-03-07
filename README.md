@@ -1,4 +1,4 @@
-# :crystal_ball:S ADE: Software Architecture with Document Embeddings
+# :crystal_ball: SADE: Software Architecture with Document Embeddings
 
 ## :question: What is SADE?
 
