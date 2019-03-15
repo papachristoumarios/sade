@@ -36,7 +36,10 @@ class Cluster:
             self.calculate_distributional_cluster_features()
         return self._cond_attr
 
-    
+    def __lt__(self, other):
+        _, dI = Cluster.merge_clusters(self, other)
+        return dI < 0
+
     def __repr__(self):
         return str(self.features)
 
