@@ -9,16 +9,14 @@ class BTreeNode:
         self.leaf = leaf
 
         # Keys and children
-        self.keys = []
-        self.children = []
+        self.keys = (2*B - 1)*[None]
+        self.children = (2*B) * [None]
 
         # Number of keys
         self.n = 0
 
-    def traverse(self):
-        if not self.leaf:
-            for i in range(self.n):
-                self.children[i].traverse()
+    def __repr__(self):
+        return 'Keys: {} Children: {}'.format(str(self.keys), str(self.children))
 
     def search(self, key):
         i = 0
@@ -40,7 +38,12 @@ class BTreeNode:
 
         if self.leaf:
             # Insert the key
-            bisect.insort(self.keys, key)
+
+            while i >= 0 and self.keys[i] > key:
+                self.keys[i + 1] = self.keys[i]
+                i -= 1
+
+            self.keys[i+1] = key;
 
             self.n += 1
 
@@ -57,57 +60,119 @@ class BTreeNode:
 
             self.children[i + 1].insert_non_full(key)
 
-    def split_child(self, y):
-        # TODO Finish
+    def split_child(self, i, y):
 
         # Shallow copy
         z = copy.copy(y)
         z.n = self.B - 1
 
-        z.keys = z.keys[-z.n:]
+        for j in range(self.B - 1):
+            z.keys[j] = y.keys[j + self.B]
+
+        if not y.leaf:
+            for j in range(self.B - 1):
+                z.children[j] = y.children[j + self.B]
+        y.n = self.B - 1
+
+        for j in range(self.n, i, -1):
+            self.children[j + 1] = self.children[j]
+
+        self.children[i + 1] = z
+
+        for j in range(self.n - 1, i - 1, -1):
+            self.keys[j+1] = self.keys[j]
+
+        self.keys[i] = y.keys[self.B-1];
+
+        self.n += 1
 
 
+class BTree:
 
-    class BTree:
+    def __init__(self, B):
+        self.B = B
+        self.root = None
 
-        def __init__(self, B):
-            self.B = B
-            self.root = None
+    def traverse(self):
+        if self.root != None:
+            self.root.traverse()
 
-        def traverse(self):
-            if self.root != None:
-                self.root.traverse()
+    def search(self, key):
+        if self.root != None:
+            self.root.search(key)
 
-        def search(self, key):
-            if self.root != None:
-                self.root.search(key)
+    def __repr__(self):
+        return self.root.__repr__()
 
-        def insert(self, key):
+    def insert(self, key):
 
-            # Root is created
-            if self.root == None:
-                self.root = BTreeNode(self.B)
-                self.root.keys.append(key)
-                self.root.n = 1
+        # Root is created
+        if self.root == None:
+            self.root = BTreeNode(self.B, True)
+            self.root.keys[0] = key
+            self.root.n = 1
+
+        else:
+            # The B-Tree is full so we need to change the root by splitting
+            if self.root.n == 2 * self.B - 1:
+                s = BTreeNode(self.B, False)
+                s.children[0] =self.root
+
+                # Split and insert
+                s.split_child(0, self.root)
+
+                i = 0
+                if s.keys[0] < key:
+                    i += 1
+
+                s.children[i].insert_non_full(key)
+
+                # Change root
+                self.root = s
 
             else:
-                # The B-Tree is full so we need to change the root by splitting
-                if self.root.n == 2 * self.B - 1:
-                    s = BTreeNode(self.B, False)
-                    s.children.append(self.root)
 
-                    # Split and insert
-                    s.split_child(0, self.root)
+                self.root.insert_non_full(key)
 
-                    i = 0
-                    if s.keys[0] < key:
-                        i += 1
+class DCFNode(BTreeNode):
 
-                    s.children[i].insert_non_full(key)
+    def __init__(self, B, leaf):
+        super(DCFNode, self).__init__(B, leaf)
+        self._merged = None
+        self._dI = None
 
-                    # Change root
-                    self.root = s
+    @property
+    def merged(self):
+        if self.leaf:
+            return None
+        elif self.n == 1:
+            self._dI = 0
+            self.merged = self.keys[0]
+        elif self.n > 1:
+            temp_c, temp_dI = Cluster.merge_clusters(self.keys[0], self.keys[1])
 
-                else:
+            for i in range(2, self.n):
+                temp_c, temp_dI = Cluster.merge_clusters(temp_c, self.keys[i])
 
-                    self.root.insert_non_full(key)
+            self._merged = temp_c
+            self._dI = temp_dI    
+
+
+class DCFTree(BTree):
+
+    def __init__(self, B):
+        super(DCFTree, self).__init__(B)
+
+def test_b_tree():
+    t = DCFTree(3)
+    t.insert(10);
+    t.insert(20);
+    t.insert(5);
+    t.insert(6);
+    t.insert(12);
+    t.insert(30);
+    t.insert(7);
+    t.insert(17);
+    print(t)
+
+test_b_tree()
