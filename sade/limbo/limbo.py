@@ -2,6 +2,7 @@ from scipy.sparse import *
 import copy
 import numpy as np
 import sys
+import btree
 
 def kl_div(p, q):
     temp = - np.log (p / q)
@@ -120,6 +121,33 @@ def agglomerative_information_bottleneck_clustering(initial_clusters, n_clusters
         n -= 1
 
     return initial_clusters
+
+
+def limbo(initial_clusters, n_clusters, B, S):
+    """
+        The LIMBO Clustering Algorithm
+        Args:
+            initial_clusters: An array of Cluster objects
+            n_clusters: Number of desired clusters
+            B: Branching Factor of the DCFTree
+            S: Spatial Factor of the DCFTree
+    """
+
+    # Phase 1: Insert to DCF Tree
+    dcf_tree = btree.DCFTree(B, S)
+
+    for cluster in initial_clusters:
+        dcf_tree.insert(c)
+
+    # Phase 2: Apply AIB Algorithm to the tree leaves
+    # Collect merged leaves
+    # XXX Collect the parent of leaves
+    aib_initial_clusterings = dcf_tree.cluster_leaves()
+
+    # TODO Add phase 3 / naming
+
+    return agglomerative_information_bottleneck_clustering(aib_initial_clusterings, n_clusters=n_clusters)
+
 
 
 if __name__  == '__main__':

@@ -91,7 +91,6 @@ class BTreeNode:
     def collect_leaves(self, result):
         if self.leaf and self.n > 0:
             result.append(self)
-            print(result)
             return result
         else:
             for i in range(self.n):
@@ -153,9 +152,7 @@ class DCFNode(BTreeNode):
 
     @property
     def merged(self):
-        if self.leaf:
-            return None
-        elif self.n == 1:
+        if self.n == 1:
             self._dI = 0
             self.merged = self.keys[0]
         elif self.n > 1:
@@ -170,12 +167,17 @@ class DCFTree(BTree):
     def __init__(self, B, S):
         super(DCFTree, self).__init__(B)
         self.S = S
-
+        self.leaves = None
 
     @property
     def border(self):
-        self.leaves = self.root.collect_leaves([])
+        if self.leaves == None:
+            self.leaves = self.root.collect_leaves([])
         return self.leaves
+
+    def cluster_leaves(self):
+        self.cluster_leaves = [b.merged for b in self.border]
+        return self.cluster_leaves
 
 def test_b_tree():
     t = DCFTree(3)
