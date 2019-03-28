@@ -88,9 +88,9 @@ def best_partition_bipartite(G):
     '''
     def _find(u):
         ''' Find with path compression '''
-        if parent[i] != i:
-            parent[i] = _find(parent[i])
-        return parent[i];
+        if parent[u] != u:
+            parent[u] = _find(parent[u])
+        return parent[u];
 
     def _union(u, v):
         ''' Union by rank '''
