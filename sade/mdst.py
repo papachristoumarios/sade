@@ -63,5 +63,14 @@ def mst(G, s):
     g = []
     for (u, v, w) in G.edges(data=True):
         g.append(Arc(v, w['weight'], u))
-    MDST = min_spanning_arborescence(g, s)
-    print(MDST)
+    tmp = min_spanning_arborescence(g, s)
+    MDST = nx.DiGraph()
+    edges = []
+
+    for e in tmp.values():
+        edges.append((e.head, e.tail))
+        
+    MDST.add_edges_from(edges)
+
+    return MDST
+

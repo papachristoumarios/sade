@@ -51,7 +51,7 @@ def generate_bunch(partition, outfile=None, enumerable=False):
         result.append('{}= {}\n'.format(str(key) if not enumerable else i, ', '.join(map(str, val))))
         i += 1
 
-    result = '\n'.join(result)
+    result = ''.join(result)
 
     if outfile != None:
         with open(outfile, 'w+') as f:

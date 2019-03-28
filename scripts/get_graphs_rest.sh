@@ -3,6 +3,11 @@
 # Author : Marios Papachristou
 # Get call graphs using Cscout's REST API
 
+# Loop until cscout is available
+until $(curl --output /dev/null --silent --head --fail http://localhost:8081/); do
+	sleep 50
+done
+
 # File include graph
 curl -X GET "http://localhost:8081/fgraph.txt?gtype=I&all=1" > fgraph_I_all.txt
 

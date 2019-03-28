@@ -246,11 +246,8 @@ def pipelined_removals(
             expand,
             split_underscores,
             camel_case_split,
-	    wordninja.split],
+            wordninja.split],
         cleaner=remove_nonalpha):
-        '''
-            Apply pipelined removals
-        '''
 
     result = pipeline[0](s)
     for component in pipeline[1:]:

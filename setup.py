@@ -25,5 +25,6 @@ setup(
         'sade/community_detection.py',
         'sade/autogen_module.py',
         'sade/json_join.py',
+        'sade/compare_distances.py',
         'sade/call_graph_analysis.py',
         'sade/simple_community_detection.py'])
