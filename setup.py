@@ -10,10 +10,12 @@ setup(
     url='https://github.com/papachristoumarios/sade',
     packages=[
         'sade',
-        'sade.mojo'],
+        'sade.mojo',
+        'sade.limbo'],
     package_dir={
         'sade': 'sade',
-        'sade.mojo': 'sade/mojo'},
+        'sade.mojo': 'sade/mojo',
+        'sade.limbo': 'sade/limbo' },
     package_data={
         'sade.mojo': ['sade/mojo/*.java']},
     include_package_data=True,
