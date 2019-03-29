@@ -26,7 +26,6 @@ def bfs(G, s):
 
     while q:
         u = q.popleft()
-
         for v in G[u]:
             if depth[v] == -1:
                 depth[v] = depth[u] + 1
@@ -38,17 +37,13 @@ def bfs(G, s):
 def layerize_mdst(embeddings_filename, dimensions, call_graph_file, modules_json, directed, visualize):
         partition, communities, embeddings, G, model, H = sade.community_detection.detect_communities(
             embeddings_filename=embeddings_filename, modules_json=modules_json, call_graph_file=call_graph_file, dimensions=dimensions, directed=directed, visualize=visualize)
+        s = list(H.nodes())[0]
+        print('s = ', str(s))
+        MDST = sade.mdst.mst(H, s)
+#        import pdb; pdb.set_trace()
 
-        MDST = sade.mdst.mst(0, H)
-
-        depth, level = bfs(MDST, 0)
-
-        layers = collections.defaultdict(list)
-
-        for lvl, _communities in level.items():
-            for c in _communities:
-                layers[lvl] = layers[lvl] + embeddings[c][0]
-
+        depth, layers = bfs(MDST, s)
+       
         return layers
 
 def is_path(G):
