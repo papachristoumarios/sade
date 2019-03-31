@@ -1,6 +1,7 @@
 import bisect
 import copy
-from limbo import *
+import limbo
+
 
 
 class BTreeNode:
@@ -156,11 +157,47 @@ class DCFNode(BTreeNode):
             self._dI = 0
             self.merged = self.keys[0]
         elif self.n > 1:
-            temp_c, temp_dI = Cluster.merge_clusters(self.keys[0], self.keys[1])
+            temp_c, temp_dI = sade.limbo.Cluster.merge_clusters(self.keys[0], self.keys[1])
             for i in range(2, self.n):
-                temp_c, temp_dI = Cluster.merge_clusters(temp_c, self.keys[i])
+                temp_c, temp_dI = sade.limbo.Cluster.merge_clusters(temp_c, self.keys[i])
             self._merged = temp_c
             self._dI = temp_dI
+
+    def insert_non_full(self, key):
+
+        i = self.n - 1
+
+        argmin = 0
+        minimum_dI = sys.maxsize
+
+        for j in range(self.n):
+            _, temp_dI = sade.limbo.Cluster.merge_clusters(self.keys[j], key)
+            if temp_dI < minimum_dI:
+                minimum_dI = temp_dI
+                argmin = j
+
+        if self.leaf:
+            # Insert the key
+
+            while i >= argmin:
+                self.keys[i + 1] = self.keys[i]
+                i -= 1
+
+            self.keys[i+1] = key;
+
+            self.n += 1
+
+        else:
+
+            while i >= argmin: i -= 1
+
+            if self.children[i + 1].n == 2 * self.B - 1:
+                self.split_child(i + 1, self.children[i + 1])
+
+                if self.keys[i + 1] < key:
+                    i += 1
+
+            self.children[i + 1].insert_non_full(key)
 
 class DCFTree(BTree):
 
@@ -178,28 +215,3 @@ class DCFTree(BTree):
     def cluster_leaves(self):
         self.cluster_leaves = [b.merged for b in self.border]
         return self.cluster_leaves
-
-def test_b_tree():
-    t = DCFTree(3)
-    t.insert(10);
-    t.insert(20);
-    t.insert(5);
-    t.insert(6);
-    t.insert(12);
-    t.insert(30);
-    t.insert(7);
-    t.insert(17);
-    print(t)
-
-def test_dcf_tree():
-
-    t = DCFTree(3, 2)
-    N = 100
-    for i in range(N):
-        tt = np.random.randint(100, size=4)
-        c = Cluster(('t' + str(i),), tt, 1, N)
-        t.insert(c)
-
-    print(t.border)
-
-test_dcf_tree()

@@ -2,7 +2,6 @@ from scipy.sparse import *
 import copy
 import numpy as np
 import sys
-import btree
 
 def kl_div(p, q):
     temp = - np.log (p / q)
@@ -150,15 +149,36 @@ def limbo(initial_clusters, n_clusters, B, S):
 
 
 
-if __name__  == '__main__':
-    t1 = np.array([100, 1, 1, 1])
-    t2 = np.array([0, 0, 2, 0])
-    c1 = Cluster(('t1',), t1, 1, 2)
-    c3 = Cluster(('t2',), t1, 1, 2)
-    c2 = Cluster(('t3',), t2, 1, 2)
+t = btree.BTree(3)
+t.insert(10);
+t.insert(20);
+t.insert(5);
+t.insert(6);
+t.insert(12);
+t.insert(30);
+t.insert(7);
+t.insert(17);
+print(t)
 
-    l = [c1, c2, c3]
 
-    res = agglomerative_information_bottleneck_clustering(l, 2)
+# if __name__  == '__main__':
+#     t1 = np.array([100, 1, 1, 1])
+#     t2 = np.array([0, 0, 2, 0])
+#     c1 = Cluster(('t1',), t1, 1, 2)
+#     c3 = Cluster(('t2',), t1, 1, 2)
+#     c2 = Cluster(('t3',), t2, 1, 2)
+#
+#     l = [c1, c2, c3]
+#
+#     res = agglomerative_information_bottleneck_clustering(l, 2)
+#
+#     print(res)
 
-    print(res)
+t = btree.DCFTree(3, 2)
+N = 100
+for i in range(N):
+    tt = np.random.randint(100, size=4)
+    c = Cluster(('t' + str(i),), tt, 1, N)
+    t.insert(c)
+
+    print(t.border)
