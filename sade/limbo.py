@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import sys
 import bisect
+import collections
 
 def kl_div(p, q):
     temp = - np.log (p / q)
@@ -99,7 +100,8 @@ class BTreeNode:
         self.n += 1
 
     def collect_leaves(self, result):
-        if self.leaf and self.n > 0:
+        if self.leaf:
+            print('foo')
             result.append(self)
             return result
         else:
@@ -160,17 +162,17 @@ class DCFNode(BTreeNode):
         self._merged = None
         self._dI = None
 
-    @property
-    def merged(self):
+    def merge(self):
         if self.n == 1:
             self._dI = 0
             self.merged = self.keys[0]
         elif self.n > 1:
-            temp_c, temp_dI = sade.limbo.Cluster.merge_clusters(self.keys[0], self.keys[1])
+            temp_c, temp_dI = Cluster.merge_clusters(self.keys[0], self.keys[1])
             for i in range(2, self.n):
-                temp_c, temp_dI = sade.limbo.Cluster.merge_clusters(temp_c, self.keys[i])
+                temp_c, temp_dI = Cluster.merge_clusters(temp_c, self.keys[i])
             self._merged = temp_c
             self._dI = temp_dI
+        return self._merged
 
     def insert_non_full(self, key):
 
@@ -180,7 +182,7 @@ class DCFNode(BTreeNode):
         minimum_dI = sys.maxsize
 
         for j in range(self.n):
-            _, temp_dI = sade.limbo.Cluster.merge_clusters(self.keys[j], key)
+            _, temp_dI = Cluster.merge_clusters(self.keys[j], key)
             if temp_dI < minimum_dI:
                 minimum_dI = temp_dI
                 argmin = j
@@ -213,17 +215,58 @@ class DCFTree(BTree):
     def __init__(self, B, S):
         super(DCFTree, self).__init__(B)
         self.S = S
-        self.leaves = None
 
-    @property
+    def insert(self, key):
+
+        # Root is created
+        if self.root == None:
+            self.root = DCFNode(self.B, True)
+            self.root.keys[0] = key
+            self.root.n = 1
+
+        else:
+            # The B-Tree is full so we need to change the root by splitting
+            if self.root.n == 2 * self.B - 1:
+                s = DCFNode(self.B, False)
+                s.children[0] = self.root
+
+                # Split and insert
+                s.split_child(0, self.root)
+
+                i = 0
+                if s.keys[0] < key:
+                    i += 1
+
+                s.children[i].insert_non_full(key)
+
+                # Change root
+                self.root = s
+
+            else:
+
+                self.root.insert_non_full(key)
+
+
     def border(self):
-        if self.leaves == None:
-            self.leaves = self.root.collect_leaves([])
+        self.leaves = []
+        q = collections.deque([self.root])
+
+        while q:
+            current = q.popleft()
+            if current.leaf:
+                self.leaves.append(current)
+            else:
+                for child in current.children:
+                    if child != None:
+                        q.append(child)
+
         return self.leaves
 
+
     def cluster_leaves(self):
-        self.cluster_leaves = [b.merged for b in self.border]
-        return self.cluster_leaves
+        self.border()
+        self.clusters = [b.merge() for b in self.leaves]
+        return self.clusters
 
 
 class Cluster:
@@ -239,7 +282,6 @@ class Cluster:
 
     def calculate_distributional_cluster_features(self):
         self.probability = self.num_tuples / self.total_tuples
-        # self._cond_attr = np.sum(self.feature_vector, axis=0) / np.sum(self.feature_vector)
         self.cond_attr = self.feature_vector.astype(np.float64) / np.sum(self.feature_vector)
         return self.probability, self.cond_attr
 
@@ -342,11 +384,10 @@ def limbo(initial_clusters, n_clusters, B, S):
     dcf_tree = DCFTree(B, S)
 
     for cluster in initial_clusters:
-        dcf_tree.insert(c)
+        dcf_tree.insert(cluster)
 
     # Phase 2: Apply AIB Algorithm to the tree leaves
     # Collect merged leaves
-    # XXX Collect the parent of leaves
     aib_initial_clusterings = dcf_tree.cluster_leaves()
 
     # TODO Add phase 3 / naming
@@ -396,14 +437,15 @@ if __name__ == '__main__':
     argparser.add_argument('-i', help='BoW File')
     argparser.add_argument('-n', help='Number of clusters', type=int)
     argparser.add_argument('--aib', help='Naively run Agglomerative Information Bottleneck', action='store_true')
-    argparser.add_argument('-B', help='DCF-tree branching factor')
-    argparser.add_argument('-S', help='DCF-tree space factor')
+    argparser.add_argument('-B', help='DCF-tree branching factor', type=int, default=3)
+    argparser.add_argument('-S', help='DCF-tree space factor', type=int, default=sys.maxsize)
 
     args = argparser.parse_args()
 
     initial_clusters = preprocess_bow(args.i)
 
-    print(initial_clusters)
 
     if args.aib:
         print(agglomerative_information_bottleneck_clustering(initial_clusters=initial_clusters, n_clusters=args.n))
+    else:
+        print(limbo(initial_clusters=initial_clusters, n_clusters=args.n, B=args.B, S=args.S))

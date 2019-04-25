@@ -2,6 +2,7 @@ from scipy.sparse import *
 import copy
 import numpy as np
 import sys
+import sade.limbo.btree
 
 def kl_div(p, q):
     temp = - np.log (p / q)
@@ -133,7 +134,7 @@ def limbo(initial_clusters, n_clusters, B, S):
     """
 
     # Phase 1: Insert to DCF Tree
-    dcf_tree = btree.DCFTree(B, S)
+    dcf_tree = sade.limbo.btree.DCFTree(B, S)
 
     for cluster in initial_clusters:
         dcf_tree.insert(c)
@@ -149,7 +150,7 @@ def limbo(initial_clusters, n_clusters, B, S):
 
 
 
-t = btree.BTree(3)
+t = sade.limbo.btree.BTree(3)
 t.insert(10);
 t.insert(20);
 t.insert(5);

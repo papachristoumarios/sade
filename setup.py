@@ -14,8 +14,7 @@ setup(
         'sade.limbo'],
     package_dir={
         'sade': 'sade',
-        'sade.mojo': 'sade/mojo',
-        'sade.limbo': 'sade/limbo' },
+        'sade.mojo': 'sade/mojo'},
     package_data={
         'sade.mojo': ['sade/mojo/*.java']},
     include_package_data=True,
@@ -23,6 +22,7 @@ setup(
         'sade/clustering.py',
         'sade/embeddings.py',
         'sade/corrcoef.py',
+        'sade/limbo.py',
         'sade/layerize.py',
         'sade/community_detection.py',
         'sade/autogen_module.py',
