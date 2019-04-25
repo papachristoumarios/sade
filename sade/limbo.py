@@ -367,7 +367,12 @@ def agglomerative_information_bottleneck_clustering(initial_clusters, n_clusters
 
         n -= 1
 
-    return initial_clusters
+    result = {}
+
+    for i, cluster in enumerate(initial_clusters):
+        result[i] = list(cluster.features)
+
+    return result    
 
 
 def limbo(initial_clusters, n_clusters, B, S):
