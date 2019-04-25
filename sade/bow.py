@@ -33,39 +33,36 @@ import spacy
 import sade.helpers
 nlp = spacy.load('en_core_web_sm')
 
+class BowModel(dict):
 
-# corpus = [
-#     ['a', 'b', 'c'],
-#     ['a', 'd', 'a']
-# ]
-#
-# vectorizer = CountVectorizer(
-#     analyzer='word',
-#     tokenizer=lambda x: x,
-#     preprocessor=lambda x: x,
-#     token_pattern=None)
-#
-# X = vectorizer.fit_transform(corpus)
-#
-# print(X.toarray())
+    def __init__(self, dim):
+        self.dim = dim
 
-class BoWModel:
+    def __missing__(self, key):
+        return np.zeros(shape=(1, self.dim), dtype=int)
 
-    def __init__(self):
-        pass
+    def dumpify(self):
+        dumpified = {}
+        for key, val in self.items():
+            dumpified[key] = list(val)
+        return dumpified
+
+    @staticmethod
+    def dedumpify(pickle_file):
+        temp = pickle.load(open(pickle_file, 'rb'))
+        bow = BowModel(len(list(temp.keys())[0]))
+        for key, val in temp.items():
+            bow[key] = np.array(val)
+
+        return bow
+
+# Ignore very small words due to tokenization errors
+MIN_SIZE = 2
+
 
 logging.basicConfig(
     format='%(asctime)s : %(levelname)s : %(message)s',
     level=logging.INFO)
-
-default_params = {
-    "size": 300,
-    "window": 10,
-    "min_count": 10,
-    "workers": multiprocessing.cpu_count() - 1,
-    "sample": 1E-3
-}
-
 
 def lookup(x):
     '''
@@ -81,7 +78,6 @@ def get_areas():
 
 def source_code_document_embeddings(
         extensions,
-        params=default_params,
         modules=None,
         outfile='embeddings.bin'):
     '''
@@ -115,34 +111,32 @@ def source_code_document_embeddings(
 
     print('Build dataset')
 
-    # Generate tagged documents
-    taggeddocs = []
 
-    for filename, sample in zip(files, data_samples):
-        import pdb; pdb.set_trace()
+    vectorizer = CountVectorizer(
+        analyzer='word',
+        tokenizer=lambda x: x,
+        preprocessor=lambda x: x,
+        token_pattern=None)
+
+    print('Fitting BoW model')
+
+    counts = vectorizer.fit_transform(data_samples).toarray()
+
+    bow = BowModel(counts.shape[1])
+
+    print('Merging')
+
+    for i, (filename, sample) in enumerate(zip(files, data_samples)):
         base = sade.helpers.basename(filename)
         if modules is None:
-            td = TaggedDocument(
-                words=sample, tags=[base])
+            bow[base] = counts[i]
         else:
-            td = TaggedDocument(words=sample, tags=[modules[base]])
+            bow[modules[base]] = bow[modules[base]] + counts[i]
 
-        taggeddocs.append(td)
+    with open(outfile, 'wb+') as f:
+        pickle.dump(bow.dumpify(), f)
 
-    print('Generated dataset')
-
-    model = gensim.models.Doc2Vec(**params)
-
-    model.build_vocab(taggeddocs)
-
-    model.train(
-        taggeddocs,
-        total_examples=model.corpus_count,
-        epochs=model.iter)
-    model.save(outfile)
-
-    return model
-
+    return bow
 
 def _process(document):
     '''
@@ -179,7 +173,7 @@ def _process(document):
         lemma = lookup(word.lower())
         result.append(lemma)
 
-    return list(filter(lambda x: x != '', result))
+    return list(filter(lambda x: x != '' and len(x) > MIN_SIZE, result))
 
 
 def preprocess_data_samples(data_samples, stopwords):
@@ -293,25 +287,17 @@ if __name__ == '__main__':
         description='Generate Bag of Words embeddings')
     argparser.add_argument('-d', type=str, default='.', help='Directory')
     argparser.add_argument('-m', type=str, help='Modules')
-    argparser.add_argument(
-        '-p',
-        type=str,
-        help='Doc2Vec Parameters Configuration',
-        default='')
+
     argparser.add_argument(
         '-o',
         type=str,
         help='Output File',
-        default='embeddings.bin')
+        default='embeddings.bow')
 
     args = argparser.parse_args()
 
     os.chdir(args.d)
 
-    if args.p == '':
-        params = default_params
-    else:
-        params = json.loads(open(args.p).read())
 
     source_code_document_embeddings(
-        ['.c', '.h'], modules=args.m, outfile=args.o, params=params)
+        ['.c', '.h'], modules=args.m, outfile=args.o)
