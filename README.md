@@ -236,17 +236,17 @@ You can cite the project using the following bibliographic entries
 }
 
 @misc{call_graph, 
-	title={Linux Kernel 4.21 Call Graph},
+    title={Linux Kernel 4.21 Call Graph},
     DOI={10.5281/zenodo.2652487}, 
-	publisher={Zenodo}, 
-	author={Papachristou, Marios}, 
-	year={2019}
+    publisher={Zenodo}, 
+    author={Papachristou, Marios}, 
+    year={2019}
 }
 
 @misc{sade_source_code, 
-	title={Software Architecture with Document Embeddings and the Call Graph Source Code}, 
-	DOI={10.5281/zenodo.2673033}, 
-	publisher={Zenodo},
+    title={Software Architecture with Document Embeddings and the Call Graph Source Code}, 
+    DOI={10.5281/zenodo.2673033}, 
+    publisher={Zenodo},
     author={Papachristou, Marios},
     year={2019}
 }
