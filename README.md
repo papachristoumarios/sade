@@ -2,7 +2,7 @@
 
 ## :question: What is SADE?
 
-SADE (abbreviated as Software Architecture with Document Embeddings) is a library for studying and recovering the architectures of complex softwares systems. Our approach uses a combination of document embeddings on the source code provided by **Doc2Vec** as well as the existing structure of the codebase via the call graph. Document embeddings have never been used before to study the architecture of a software system. We will construct a geometric graph on a metric space and iteratively and form communities in this graph ariving at a layered architecture viewed from the call graph perspective. It has been applied on the Linux Kernel codebase and will be compared to its existing layered architecture using **MoJo** distance as a clusterings metric as well as, compare its stability and extremity compared to other Software Clustering.
+SADE (abbreviated as Software Architecture with Document Embeddings) is a library for studying and recovering the architectures of complex softwares systems. Our approach uses a combination of document embeddings on the source code provided by **Doc2Vec** as well as the existing structure of the codebase via the call graph. Document embeddings have never been used before to study the architecture of a software system. We will construct a geometric graph on a metric space and iteratively and form communities in this graph ariving at a layered architecture viewed from the call graph perspective. It has been applied on the Linux Kernel codebase and will be compared to its existing architecture using **MoJo** distance as a clusterings metric as well as, compare its stability and extremity compared to other Software Clusterings.
 
 The software is released under the MIT License.
 
@@ -223,3 +223,32 @@ The clustering results are, as explained above, contained in JSON or Bunch files
 
 
 ## Citing the Project
+
+You can cite the project using the following bibliographic entries
+
+```latex
+@inproceedings{sade,
+    title={Software Clusterings with Vector Semantics and the Call Graph},
+    author={Papachristou, Marios},
+    year={2019},
+    booktitle={ACM Joint European Software Engineering Conference and Symposium on the 	Foundations of Software Engineering (ESEC/FSE)},
+    organization={Association for Computing Machinery}
+}
+
+@misc{call_graph, 
+	title={Linux Kernel 4.21 Call Graph},
+    DOI={10.5281/zenodo.2652487}, 
+	publisher={Zenodo}, 
+	author={Papachristou, Marios}, 
+	year={2019}
+}
+
+@misc{sade_source_code, 
+	title={Software Architecture with Document Embeddings and the Call Graph Source Code}, 
+	DOI={10.5281/zenodo.2673033}, 
+	publisher={Zenodo},
+    author={Papachristou, Marios},
+    year={2019}
+}
+```
+
