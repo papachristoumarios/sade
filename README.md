@@ -2,7 +2,11 @@
 
 ## :question: What is SADE?
 
-SADE (abbreviated as Software Architecture with Document Embeddings) is a library for studying and recovering the architectures of complex softwares systems. Our approach uses a combination of document embeddings on the source code provided by **Doc2Vec** as well as the existing structure of the codebase via the call graph. Document embeddings have never been used before to study the architecture of a software system. We will construct a geometric graph on a metric space and iteratively and form communities in this graph ariving at a layered architecture viewed from the call graph perspective. It has been applied on the Linux Kernel codebase and will be compared to its existing architecture using **MoJo** distance as a clusterings metric as well as, compare its stability and extremity compared to other Software Clusterings.
+SADE (abbreviated as Software Architecture with Document Embeddings) is a library for studying and recovering the architectures of complex softwares systems. Our approach uses a combination of document embeddings on the source code provided by **Doc2Vec** as well as the existing structure of the codebase via the **call graphs**, produced by **CScout**. 
+
+Document embeddings have never been used before to study the architecture of a software system. We will construct a geometric graph on a pseudo-metric space and iteratively and form communities in this graph, creating clusters that represent modules of software using the **Louvain Algorithm**. The proposed evaluation metrics for software clusterings are **stability**, **authoritativeness** (closeness to the ground truth)  and **extremity** (avoiding the creation of very small or very large clusters). 
+
+This project was curated for the **ESEC/FSE 2019 Student Research Competition**.  You can read the paper [here](https://dl.acm.org/citation.cfm?id=3342483) as well as the [slides](https://github.com/papachristoumarios/software-clusterings-with-vector-semantics-and-call-graph/raw/master/slides/slides.pdf).  
 
 The software is released under the MIT License.
 
@@ -28,18 +32,18 @@ With SADE you can analyze your C project using the components provided by it. Be
 
 
 
-### Step 1: Generate Module Definition File
+### Step 1: Generate Grains
 
-For defining the modules of the system, each file must map to a module. You should generate a `modules.json` file with the following format:
+For defining the modules of the system, each file must map to a grain. You should generate a `modules.json` file with the following format:
 
 ```json
 {
-    "boo.c" : "boomodule",
-    "foo.c" : "foomodule"
+    "boo.c" : "boograin",
+    "foo.c" : "foograin"
 }
 ```
 
-You can do this manually, but in case the project is strictly organized into modules (as directories) you can use the `autogen_module` tool to generate the module definition. You can do this by:
+You can do this manually, but in case the project is strictly organized into grains (e.g. one-top directories) you can use the `autogen_module` tool to generate the module definition. You can do this by:
 
 ```bash
 autogen_module.py --suffix .c --suffix .h -d 1 >modules.json
@@ -55,13 +59,16 @@ autogen_module.py --suffix .cpp --suffix .h -d 1 >modules.json
 
 
 
+
+
 ### Step 2: Generate document embeddings
 
 After creating the `modules.json` definitions file you can proceed generating the Doc2Vec using Gensim and spaCy preprocessed with the following pipeline:
 
-1. autogen_module.py --suffix .c --suffix .h -d 1 >modules.jsonStop-word Removal
-2. Tokenization
-3. Lemmatization
+1. `autogen_module.py --suffix .c --suffix .h -d 1 >modules.json`
+2. Stop-word Removal
+3. Tokenization
+4. Lemmatization
 
 You can generate the embeddings with the `embeddings.py` script using
 
@@ -90,8 +97,8 @@ A `params.json` file example:
 
 For the purposes of our research we have trained the document embeddings for the Linux Kernel Codebase v4.21. From here you can download the embeddings produced with `gensim`.  
 
-1. [Document Embeddings (Module Level without Probabilistic Split)](https://pithos.okeanos.grnet.gr/public/MjvTbBkLWC6tSlTmK1yiq3)
-2. [Document Embeddings (Module Level with Probabilstic Split)](https://pithos.okeanos.grnet.gr/public/TAEsZW4IJZgrN9aanI11a7)
+1. [Document Embeddings (One-top directory Level without Identifier Splitting)](https://pithos.okeanos.grnet.gr/public/MjvTbBkLWC6tSlTmK1yiq3)
+2. [Document Embeddings (One-top directory Level with Identifier Splitting)](https://pithos.okeanos.grnet.gr/public/TAEsZW4IJZgrN9aanI11a7)
 3. [Document Embeddings (Source Code File Level)](https://pithos.okeanos.grnet.gr/public/3cEM9HxM7KG7AEdlkKvcA4)
 
 
@@ -135,7 +142,7 @@ You can get all the call graphs via running `scripts/get_graphs_rest.sh`.
 
 #### Pre-generated call graph for Linux Kernel 4.21
 
-A pre-generated call graph of Linux Kernel 4.21 (20.1 million lines of source code) can be found [here](https://pithos.okeanos.grnet.gr/public/qJajffcQ7qEQwqXNrKkAW5). The call graphs come to a format:
+A pre-generated call graph of Linux Kernel 4.21 (20.3 million lines of source code) can be found [here](https://zenodo.org/record/2652487). The call graphs come to a format:
 
 ```
 u1 v1
