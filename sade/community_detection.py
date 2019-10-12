@@ -129,11 +129,13 @@ def generate_graph(call_graph_file, model, modules):
 
     for line in lines:
         u, v = line.split()
-        if modules != None:
-            u, v = modules[u], modules[v]
-        vu, vv = model.docvecs[u], model.docvecs[v]
-        rho = corr_coeff(vu, vv)
-
+        try:
+            if modules != None:
+                u, v = modules[u], modules[v]
+            vu, vv = model.docvecs[u], model.docvecs[v]
+            rho = corr_coeff(vu, vv)
+        except:
+            pass
         G.add_edge(u, v, weight=rho, label=str(round(rho, 3)))
 
 
@@ -162,8 +164,10 @@ def get_mean_embeddings(communities, model=None):
     embeddings = {}
 
     for idx, files in communities.items():
-        embeddings[idx] = (files, np.mean([model.docvecs[x] for x in files], axis=0))
-
+        try:
+            embeddings[idx] = (files, np.mean([model.docvecs[x] for x in files], axis=0))
+        except:
+            continue
     return embeddings
 
 def construct_induced_graph(embeddings, partition, communities, G, directed=True):
@@ -187,16 +191,19 @@ def construct_induced_graph(embeddings, partition, communities, G, directed=True
         H.add_edge(pu, pv)
 
     for (u, v, w) in H.edges(data=True):
-        # Compute rho
-        uu, vv = embeddings[u][1], embeddings[v][1]
+        try:
+            # Compute rho
+            uu, vv = embeddings[u][1], embeddings[v][1]
 
-        rho = corr_coeff(uu, vv, decreasing=True)
+            rho = corr_coeff(uu, vv, decreasing=True)
 
-        # Assign weights and labels
-        w['weight'] = rho
-        w['label'] = str(rho)
+            # Assign weights and labels
+            w['weight'] = rho
+            w['label'] = str(rho)
 
-    H = nx.relabel_nodes(H, dict([(n, ', '.join(v)) for n, v in communities.items()]))
+            H = nx.relabel_nodes(H, dict([(n, ', '.join(v)) for n, v in communities.items()]))
+        except:
+            pass
 
     return H
 
