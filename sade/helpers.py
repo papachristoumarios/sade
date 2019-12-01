@@ -5,13 +5,16 @@ import networkx as nx
 import gensim
 import numpy as np
 
-
 def cmd(_cmd):
-    # Get output of command
+    ''' Return output of command '''
     l = subprocess.check_output(_cmd, shell=True)
     l = [x.decode('utf-8') for x in l.splitlines()]
     l = list(filter(lambda z: z.rstrip() != '', l))
     return l
+
+def call_tokenizer(filename):
+    ''' Invoke tokenizer '''
+    return cmd(['tokenizer', filename])
 
 
 def basename(x, depth=1): return x.split('/')[-depth]

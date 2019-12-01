@@ -152,7 +152,9 @@ def _process(document):
     for word in components:
         lemma = lookup(word.lower())
         result.append(lemma)
-
+    
+    # print(result)
+    # import pdb; pdb.set_trace()
     return list(filter(lambda x: x != '', result))
 
 
