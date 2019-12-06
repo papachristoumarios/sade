@@ -14,7 +14,7 @@ def cmd(_cmd):
 
 def call_tokenizer(filename):
     ''' Invoke tokenizer '''
-    return cmd(['tokenizer', filename])
+    return ' '.join(subprocess.check_output(['tokenizer', '-tc', filename]).decode('utf-8').split('\n'))
 
 
 def basename(x, depth=1): return x.split('/')[-depth]
