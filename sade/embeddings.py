@@ -26,6 +26,7 @@ from spacy.lang.en.lemmatizer import LOOKUP
 from spacy.lang.en import English
 import spacy
 import sade.helpers
+import tqdm
 nlp = spacy.load('en_core_web_sm')
 
 
@@ -34,11 +35,12 @@ logging.basicConfig(
     level=logging.INFO)
 
 default_params = {
-    "size": 300,
-    "window": 10,
-    "min_count": 10,
+    "size": 200,
+    "window": 5,
+    "min_count": 5,
     "workers": multiprocessing.cpu_count() - 1,
-    "sample": 1E-3
+    "sample": 1E-3,
+    "epochs" : 200
 }
 
 
@@ -75,14 +77,16 @@ def source_code_document_embeddings(
         files.extend(sade.helpers.list_files('.', ext))
 
     data_samples = []
+    pbar = tqdm.tqdm(total=len(files))
     for filename in files:
-        print(filename)
-        with open(filename) as f:
-            try:
-                content = f.read()
-                data_samples.append(content)
-            except BaseException:
-                continue
+        try:
+            content = sade.helpers.call_tokenizer(filename)
+            data_samples.append(content)
+        except BaseException:
+            continue
+        pbar.update(1)
+    pbar.close()
+
     stopwords = build_stoplist(data_samples)
 
     data_samples = preprocess_data_samples(
@@ -115,6 +119,9 @@ def source_code_document_embeddings(
         epochs=model.iter)
     model.save(outfile)
 
+    print('Number of documents:', len(model.docvecs))
+    print('Vocab size:', len(model.wv.vocab))
+
     return model
 
 
@@ -131,12 +138,12 @@ def _process(document):
 
     sample, stopwords_regex = document
 
-    # Remove first comment (heuristic for copyright related stuff)
-    long_comment_regex = r'/\*[^\*/]*\*/'
-    first_comment = re.search(long_comment_regex, sample)
-    if first_comment is not None:
-        start, end = first_comment.span()
-        sample = sample[:end]
+    # # Remove first comment (heuristic for copyright related stuff)
+    # long_comment_regex = r'/\*[^\*/]*\*/'
+    # first_comment = re.search(long_comment_regex, sample)
+    # if first_comment is not None:
+    #     start, end = first_comment.span()
+    #     sample = sample[:end]
 
     sample = re.sub(stopwords_regex, '', sample)
 
@@ -152,7 +159,7 @@ def _process(document):
     for word in components:
         lemma = lookup(word.lower())
         result.append(lemma)
-    
+
     # print(result)
     # import pdb; pdb.set_trace()
     return list(filter(lambda x: x != '', result))

@@ -134,10 +134,9 @@ def generate_graph(call_graph_file, model, modules):
                 u, v = modules[u], modules[v]
             vu, vv = model.docvecs[u], model.docvecs[v]
             rho = corr_coeff(vu, vv)
+            G.add_edge(u, v, weight=rho, label=str(round(rho, 3)))
         except:
-            pass
-        G.add_edge(u, v, weight=rho, label=str(round(rho, 3)))
-
+            continue
 
     return G
 
@@ -234,6 +233,8 @@ def detect_communities(embeddings_filename, dimensions, call_graph_file, modules
     G = generate_graph(call_graph_file, model, modules)
 
     if visualize:
+        import pdb; pdb.set_trace()
+
         nx.nx_pydot.write_dot(G, '{}_weights.dot'.format(os.path.splitext(call_graph_file)[0]))
 
 

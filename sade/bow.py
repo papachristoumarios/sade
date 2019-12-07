@@ -7,6 +7,7 @@
 
 
 from sklearn.feature_extraction.text import CountVectorizer
+import tqdm
 import pickle
 import wordninja
 import functools
@@ -95,15 +96,16 @@ def source_code_document_embeddings(
     for ext in extensions:
         files.extend(sade.helpers.list_files('.', ext))
 
+    pbar = tqdm.tqdm(total=len(files))
     data_samples = []
     for filename in files:
-        print(filename)
-        with open(filename) as f:
-            try:
-                content = f.read()
-                data_samples.append(content)
-            except BaseException:
-                continue
+        try:
+            content = sade.helpers.call_tokenizer(filename)
+            data_samples.append(content)
+        except BaseException:
+            continue
+        pbar.update(1)
+    pbar.close()        
     stopwords = build_stoplist(data_samples)
 
     data_samples = preprocess_data_samples(
@@ -152,11 +154,11 @@ def _process(document):
     sample, stopwords_regex = document
 
     # Remove first comment (heuristic for copyright related stuff)
-    long_comment_regex = r'/\*[^\*/]*\*/'
-    first_comment = re.search(long_comment_regex, sample)
-    if first_comment is not None:
-        start, end = first_comment.span()
-        sample = sample[:end]
+    # long_comment_regex = r'/\*[^\*/]*\*/'
+    # first_comment = re.search(long_comment_regex, sample)
+    # if first_comment is not None:
+    #     start, end = first_comment.span()
+    #     sample = sample[:end]
 
     sample = re.sub(stopwords_regex, '', sample)
 
