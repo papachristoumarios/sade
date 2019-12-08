@@ -51,7 +51,7 @@ def generate_bunch(partition, outfile=None, enumerable=False):
     result = []
     i = 0
     for key, val in partition.items():
-        result.append('{}= {}\n'.format(str(key) if not enumerable else i, ', '.join(map(str, val))))
+        result.append('{}= {}{}'.format(str(key) if not enumerable else i, ', '.join(map(str, val)), '\n' if i < len(partition) - 1 else ''))
         i += 1
 
     result = ''.join(result)
