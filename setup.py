@@ -29,4 +29,6 @@ setup(
         'sade/json_join.py',
         'sade/call_graph_analysis.py',
         'sade/simple_community_detection.py',
-        'sade/bow.py'])
+        'sade/bow.py',
+        'sade/visualize_graphs.py',
+        'sade/visualize_radar.py'])
