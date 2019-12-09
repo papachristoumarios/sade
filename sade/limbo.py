@@ -278,6 +278,9 @@ def agglomerative_information_bottleneck_clustering(initial_clusters, n_clusters
 
     n = len(initial_clusters)
 
+    if n < n_clusters:
+        raise Exception('Please decrease B')
+
     while n > n_clusters:
         # Minimum indexes
         argmin_i = 0
@@ -351,7 +354,7 @@ def limbo(initial_clusters, n_clusters, B, S):
 def preprocess_bow(bow_filename):
 
     bow = pickle.load(open(bow_filename, 'rb'))
-    bow_filtered = [(key, np.array(val)) for key, val in bow.items() if sum(val) != 0]
+    bow_filtered = [(key, np.array(val[0])) for key, val in bow.items() if sum(val[0]) != 0]
     total_tuples = len(bow_filtered)
     initial_clusters = []
 
