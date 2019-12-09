@@ -21,8 +21,11 @@ def gen_module_dict(depth=-1, inverse=False, suffix=['.c', '.h']):
         modules = {}
 
     for name in filelist:
-        splitted = os.path.split(name)
-        head, tail = splitted[0].strip('./'), splitted[1]
+        _, tail = os.path.split(name)
+        head = name.lstrip('./')
+        for i in range(abs(depth)):
+            head, _ = os.path.split(head)
+
         # module maps to files
         if inverse:
             modules[head].append(tail)
@@ -30,7 +33,6 @@ def gen_module_dict(depth=-1, inverse=False, suffix=['.c', '.h']):
         else:
             modules[tail] = head
     return modules
-
 
 def export_module_file(modules, export_type):
     # Export JSON (suitable for most experiments)
