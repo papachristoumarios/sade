@@ -8,6 +8,7 @@
 import numpy as np
 from scipy import ndimage
 import os
+import sys
 if not os.environ.get('DISPLAY') is None:
     HEADLESS = False
     from matplotlib import pyplot as plt
@@ -17,7 +18,8 @@ else:
 from sklearn import manifold
 import gensim
 import gensim.models
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering, KMeans
+from sklearn.metrics import silhouette_score
 import collections
 import argparse
 from sade.helpers import load_data, generate_bunch
@@ -119,10 +121,23 @@ if __name__ == '__main__':
         X = manifold.SpectralEmbedding(n_components=args.d).fit_transform(X)
 
     linkage = args.l
+    max_sc = (-sys.maxsize, -1)
 
     # Compute clustering with sklearn
-    clustering = AgglomerativeClustering(linkage=linkage, n_clusters=args.n, affinity=args.affinity)
+    for n in range(args.n - 5, args.n + 5):
+        clustering = AgglomerativeClustering(linkage=linkage, n_clusters=n, affinity=args.affinity)
+        clustering.fit(X)
+
+        sc = silhouette_score(X, clustering.labels_, metric=args.affinity)
+
+        if sc > max_sc[0]:
+            max_sc = (sc, n)
+
+    _, n = max_sc
+    clustering = AgglomerativeClustering(linkage=linkage, n_clusters=n, affinity=args.affinity)
     clustering.fit(X)
+
+
     if args.d in [1, 2, 3] and not HEADLESS:
         plot_clustering(
             X,
