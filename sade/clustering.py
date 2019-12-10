@@ -124,7 +124,7 @@ if __name__ == '__main__':
     max_sc = (-sys.maxsize, -1)
 
     # Compute clustering with sklearn
-    for n in range(args.n - 5, args.n + 5):
+    for n in range(max(2, args.n - 5), args.n + 5):
         clustering = AgglomerativeClustering(linkage=linkage, n_clusters=n, affinity=args.affinity)
         clustering.fit(X)
 

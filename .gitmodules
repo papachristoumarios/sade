@@ -1,0 +1,6 @@
+[submodule "tokenizer"]
+	path = tokenizer
+	url = https://github.com/dspinellis/tokenizer
+[submodule "cscout"]
+	path = cscout
+	url = https://github.com/dspinellis/cscout

@@ -65,7 +65,7 @@ def get_metrics_table(tabular, name):
 
 
 PROJECTS = [
-    ('postgres', 'postgres/src', 'call-graphs/call-graphs/postgres', -1),
+    # ('postgres', 'postgres/src', 'call-graphs/call-graphs/postgres', -1),
     ('nginx', 'nginx/src', 'call-graphs/call-graphs/nginx', 0),
     ('apr', 'apr', 'call-graphs/call-graphs/apr', 0),
     ('apr-util', 'apr-util', 'call-graphs/call-graphs/apr-util', 0),
@@ -94,8 +94,6 @@ if __name__ == '__main__':
             depth=depth,
             inverse=False,
             suffix=['.c', '.h'])
-
-        files = gen_file_dict(suffix=['.c', '.h'])
 
         print('Generate JSON')
         exported_json = export_module_file(modules, export_type='json')
@@ -153,10 +151,16 @@ if __name__ == '__main__':
 
         for bunch in bunches:
             bunch_name = os.path.split(bunch)[-1].replace('_', ' ').split('.')[0]
-
+            print(bunch_name)
             mojo = int(subprocess.check_output(['java', 'MoJo', bunch, 'ground.bunch']).decode('utf-8').strip('\n'))
 
             stats = get_clustering_stats(bunch)
+
+            try:
+                sc = round(silhouette_score(bunch, 'embeddings.bin'), 4),
+            except:
+                sc = '$--$'
+
 
             results.append([
                 '\\textsc{{{}}}'.format(bunch_name.lower()),
@@ -165,7 +169,7 @@ if __name__ == '__main__':
                 round(stats.mean(), 1),
                 round(stats.std(), 1),
                 round(np.median(stats), 1),
-                round(silhouette_score(bunch, 'embeddings.bin'), 4),
+                sc,
                 mojo
             ])
 

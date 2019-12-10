@@ -1,12 +1,14 @@
 SHELL := /bin/bash
 CURR_DIR := $(SHELL pwd)
 
-install: install_cscout
+install: install_cscout install_tokenizer
 	python3 setup.py install
 
 install_cscout:
-	git clone https://github.com/dspinellis/cscout
 	cd cscout/ && $(MAKE) && $(MAKE) install
+
+install_tokenizer:
+	cd tokenizer && $(MAKE) && $(MAKE) install
 
 install_venv: 
 	virtualenv -p python3 sade_env
