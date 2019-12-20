@@ -66,13 +66,14 @@ def get_metrics_table(tabular, name):
 
 PROJECTS = [
     # ('postgres', 'postgres/src', 'call-graphs/call-graphs/postgres', -1),
-    ('nginx', 'nginx/src', 'call-graphs/call-graphs/nginx', 0),
-    ('apr', 'apr', 'call-graphs/call-graphs/apr', 0),
-    ('apr-util', 'apr-util', 'call-graphs/call-graphs/apr-util', 0),
-    ('lxc', 'lxc/src', 'call-graphs/call-graphs/lxc', 0),
-    ('httpd', 'httpd', 'call-graphs/call-graphs/httpd', 0),
-    ('vim', 'vim/src', 'call-graphs/call-graphs/vim', 0)
-    # ('linux', 'linux', 'call-graphs/call-graphs/linux', -1)
+    # ('nginx', 'nginx/src', 'call-graphs/call-graphs/nginx', 0),
+    # ('apr', 'apr', 'call-graphs/call-graphs/apr', 0),
+    # ('apr-util', 'apr-util', 'call-graphs/call-graphs/apr-util', 0),
+    # ('lxc', 'lxc/src', 'call-graphs/call-graphs/lxc', 0),
+    #('httpd', 'httpd', 'call-graphs/call-graphs/httpd', 0),
+    # ('vim', 'vim/src', 'call-graphs/call-graphs/vim', 0)
+    #('chocolate-doom', 'chocolate-doom', 'call-graphs/call-graphs/chocolate-doom', 0)
+    ('linux', 'linux', 'call-graphs/call-graphs/linux', -1)
 ]
 
 
@@ -118,7 +119,7 @@ if __name__ == '__main__':
         print('Number of clusters', n_clusters)
 
         print('Train doc2vec embeddings')
-        os.system('embeddings.py -m modules.json -d . -o embeddings.bin')
+        #os.system('embeddings.py -m modules.json -d . -o embeddings.bin')
 
         print('Train BoW')
         os.system('bow.py -m modules.json -d . -o bow.bin')
@@ -157,9 +158,10 @@ if __name__ == '__main__':
             stats = get_clustering_stats(bunch)
 
             try:
-                sc = round(silhouette_score(bunch, 'embeddings.bin'), 4),
+                sc = round(silhouette_score(bunch, 'embeddings.bin'), 4)
             except:
-                sc = '$--$'
+                if mojo == 0 and bunch_name != 'ground':
+                    continue    
 
 
             results.append([
