@@ -382,8 +382,13 @@ if __name__ == '__main__':
     if args.aib:
         result = agglomerative_information_bottleneck_clustering(initial_clusters=initial_clusters, n_clusters=args.n)
     else:
-        result = limbo(initial_clusters=initial_clusters, n_clusters=args.n, B=args.B, S=args.S)
-
+        while True:
+            try:
+                result = limbo(initial_clusters=initial_clusters, n_clusters=args.n, B=args.B, S=args.S)
+                break
+            except:
+                args.B = args.B // 2
+                
     if args.export == 'bunch':
         print(sade.helpers.generate_bunch(result))
     elif args.export == 'json':
